@@ -1,35 +1,18 @@
 from django.conf.urls.defaults import *
-import os
-import settings
 
-# Uncomment the next two lines to enable the admin:
-from django.contrib import admin
-admin.autodiscover()
-
-urlpatterns = patterns('',
-                       # (r'^accounts/login/$', 'django.contrib.auth.views.login'),
-                       (r'^login/$', 'labgeeksrpg.views.labgeeks_login'),
-                       (r'^logout/$', 'labgeeksrpg.views.labgeeks_logout'),
-                       (r'^inactive/$', 'labgeeksrpg.views.inactive'),
-                       # Example:
-                       # (r'^labgeeksrpg/', include('labgeeksrpg.foo.urls')),
-                       (r'^chronos/', include('labgeeksrpg.chronos.urls')),
-                       (r'^people/', include('labgeeksrpg.people.urls')),
-                       (r'^schedule/', include('labgeeksrpg.schedule.urls')),
-                       (r'^delphi/', include('labgeeksrpg.delphi.urls')),
-                       (r'^pythia/', include('labgeeksrpg.pythia.urls')),
-                       (r'^$', 'labgeeksrpg.views.hello'),
-                       (r'^oracles/', include('labgeeksrpg.sybil.urls')),
-                       # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
-                       # to INSTALLED_APPS to enable admin documentation:
-                       # (r'^admin/doc/', include('django.contrib.admindocs.urls')),
-
-                       # Uncomment the next line to enable the admin:
-                       (r'^admin/', include(admin.site.urls)),
+urlpatterns = patterns('labgeeks_chronos.views',
+                       (r'^report$', 'report'),
+                       url(r'^time/$', 'time', name="Time"),
+                       url(r'^report/(?P<year>\w+)/(?P<month>\w+)$', 'report', name="Report-Monthly"),
+                       url(r'^report/(?P<year>\w+)/(?P<month>\w+)/week/(?P<week>\w+)', 'staff_report', name="Report-Weekly"),
+                       url(r'^report/(?P<year>\w+)/(?P<month>\w+)/payperiod/(?P<payperiod>\w+)', 'staff_report', name="Report-Payperiod"),
+                       url(r'^report/(?P<year>\w+)/(?P<month>\w+)/(?P<day>\w+)', 'staff_report', name="Report-Specific"),
+                       (r'^time/success/$', 'success'),
+                       (r'^time/fail/', 'fail'),
+                       url(r'^(?P<user>\w+)/(?P<year>\w+)/(?P<month>\w+)$', 'personal_report', name="Personal-Report-Monthly"),
+                       url(r'^(?P<user>\w+)/(?P<year>\w+)/(?P<month>\w+)/payperiod/(?P<payperiod>\w+)', 'specific_report', name="Personal-Report-Payperiod"),
+                       url(r'^(?P<user>\w+)/(?P<year>\w+)/(?P<month>\w+)/week/(?P<week>\w+)', 'specific_report', name="Personal-Report-Weekly"),
+                       url(r'^(?P<user>\w+)/(?P<year>\w+)/(?P<month>\w+)/(?P<day>\w+)', 'specific_report', name="Personal-Report-Specific"),
+                       url(r'^(?P<user>\w+)', 'personal_report', name="Personal-Timesheet"),
+                       (r'^$', 'personal_report'),
                        )
-
-# only serve static files through the django server if debug is enabled. Only for development instances.
-if settings.DEBUG:
-    urlpatterns += patterns('',
-                            (r'^uploads/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
-                            )

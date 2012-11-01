@@ -1,8 +1,10 @@
 from django import forms
+from labgeeks_chronos.models import Shift
 
 
-class LoginForm(forms.Form):
-    """ The login form for any features that require authentication.
+class ShiftForm(forms.ModelForm):
+    """ The form that submits a sign in / sign out of a shift.
     """
-    username = forms.CharField(max_length=10)
-    password = forms.CharField(max_length=100, widget=forms.PasswordInput(render_value=False))
+    class Meta:
+        model = Shift
+        exclude = ('person', 'intime', 'outtime', 'in_clock', 'out_clock')
