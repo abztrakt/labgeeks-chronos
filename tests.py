@@ -4,8 +4,8 @@ from django.test import TestCase
 from datetime import datetime
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
-from labgeeksrpg.chronos import models as c_models
-from labgeeksrpg.chronos import views as c_views
+from labgeeks_chronos import models as c_models
+from labgeeks_chronos import views as c_views
 
 
 class StartTestCase(TestCase):
