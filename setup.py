@@ -7,7 +7,7 @@ setup(
     url = 'http://github.com/abztrakt/labgeeks_chronos',
     description = 'The punchclock/timekeeping app for the labgeeks staff management tool.',
     author = 'Craig Stimmel',
-    packages = find_packages(),
+    packages = ['labgeeks_chronos',],
     install_requires = [
         'setuptools',
         'labgeeks-people',
