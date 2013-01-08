@@ -10,3 +10,4 @@ labgeeks.wsgi
 labgeeksrpg
 local_settings.py
 uploads
+*.egg-info
