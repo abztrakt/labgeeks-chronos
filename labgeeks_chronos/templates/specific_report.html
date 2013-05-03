@@ -3,8 +3,8 @@
 {% block pageJS %}
 <script type="text/javascript" src="/static/js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript">
-$(document).ready(function() 
-    { 
+$(document).ready(function()
+    {
         $("#report").tablesorter(
             {
                 cssAsc: 'headerSortUp',
@@ -12,8 +12,8 @@ $(document).ready(function()
                 cssHeader: 'header',
                 headers: { 6: { sorter: false}, 7: {sorter: false} },
             }
-        ); 
-    } 
+        );
+    }
 );
 </script>
 {% endblock %}

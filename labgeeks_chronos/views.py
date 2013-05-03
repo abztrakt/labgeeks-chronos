@@ -4,7 +4,7 @@ from django.core.context_processors import csrf
 from django.shortcuts import render_to_response, get_object_or_404, \
     HttpResponseRedirect
 from django.template import RequestContext
-from labgeeks_chronos.forms import ShiftForm
+from labgeeks_chronos.forms import ShiftForm, DataForm
 from labgeeks_chronos.models import Shift, Punchclock
 from random import choice
 
@@ -14,12 +14,57 @@ from datetime import date
 from django.utils.safestring import mark_safe
 
 from labgeeks_people.models import UserProfile
+from django.http import HttpResponse
+from django.template import loader, Context
+from django.shortcuts import render
 
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
     return render_to_response('options.html', locals())
+
+
+def csv_data_former(request):
+    """ Generates a form for downloading a particular time period
+        shifts in CSV format.
+    """
+    if request.method == 'POST':
+        form = DataForm(request.POST)
+        if form.is_valid():
+            end_date = form.cleaned_data['end_date']
+            start_date = form.cleaned_data['start_date']
+            response = HttpResponse(mimetype='text/csv')
+            response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
+            s_year = start_date.year
+            s_month = start_date.month
+            s_day = start_date.day
+            e_year = end_date.year
+            e_month = end_date.month
+            e_day = end_date.day
+            shifts = Shift.objects.filter(intime__year=s_year, intime__month=s_month, intime__day=s_day)
+            shifter = []
+
+            for shift in shifts:
+                data_shifts = [
+                    shift.person,
+                    shift.intime,
+                    shift.outtime,
+                    shift.length,
+                ]
+                shifter.append(data_shifts)
+            t = loader.get_template('csv_template.txt')
+            c = Context({
+                        'data': shifter,
+                        })
+            response.write(t.render(c))
+            return response
+
+    else:
+        form = DataForm()
+    return render(request, 'csv_form.html', {
+        'form': form,
+    })
 
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
@@ -323,10 +368,10 @@ def personal_report(request, user=None, year=None, month=None):
         punchclock_message = ["Clock IN or OUT"]
     else:
         is_a_punchclock = False
-        punchclock_message = ["This machine is not a punch clock.", \
-            "I'm sorry %s, I'm afraid I can't let you Clock IN or OUT from this machine." %user.first_name, \
-            "You shall not pass (or Clock IN or OUT)!", \
-            "The cake is a lie, and this box isn't a punch clock."]
+        punchclock_message = ["This machine is not a punch clock.",
+                              "I'm sorry %s, I'm afraid I can't let you Clock IN or OUT from this machine." % user.first_name,
+                              "You shall not pass (or Clock IN or OUT)!",
+                              "The cake is a lie, and this box isn't a punch clock."]
 
     # Calculate the previous and upcomming months.
     prev_and_next = prev_and_next_dates(year, month)
@@ -355,6 +400,7 @@ def personal_report(request, user=None, year=None, month=None):
     }
 
     return render_to_response('options.html', args)
+
 
 @login_required
 def time(request):

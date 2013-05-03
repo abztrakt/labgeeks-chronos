@@ -2,6 +2,11 @@ from django import forms
 from labgeeks_chronos.models import Shift
 
 
+class DataForm(forms.Form):
+    start_date = forms.DateField()
+    end_date = forms.DateField()
+
+
 class ShiftForm(forms.ModelForm):
     """ The form that submits a sign in / sign out of a shift.
     """
