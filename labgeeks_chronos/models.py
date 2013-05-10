@@ -31,6 +31,7 @@ class Shift(models.Model):
     """ The shift the user is signing into or out of. A historical record of a
     work session.
     """
+
     person = models.ForeignKey(User)
     intime = models.DateTimeField()
     outtime = models.DateTimeField(blank=True, null=True)

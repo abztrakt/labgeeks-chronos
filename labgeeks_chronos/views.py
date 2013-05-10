@@ -17,6 +17,7 @@ from labgeeks_people.models import UserProfile
 from django.http import HttpResponse
 from django.template import loader, Context
 from django.shortcuts import render
+import datetime
 
 
 def list_options(request):
@@ -36,13 +37,7 @@ def csv_data_former(request):
             start_date = form.cleaned_data['start_date']
             response = HttpResponse(mimetype='text/csv')
             response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
-            s_year = start_date.year
-            s_month = start_date.month
-            s_day = start_date.day
-            e_year = end_date.year
-            e_month = end_date.month
-            e_day = end_date.day
-            shifts = Shift.objects.filter(intime__year=s_year, intime__month=s_month, intime__day=s_day)
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d %X"))
             shifter = []
 
             for shift in shifts:
