@@ -57,9 +57,7 @@ def csv_data_former(request):
 
     else:
         form = DataForm()
-    return render(request, 'csv_form.html', {
-        'form': form,
-    })
+    return render_to_response('csv_form.html', locals(), context_instance=RequestContext(request))
 
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):

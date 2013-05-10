@@ -2,7 +2,8 @@
 {% block pageJS %}
      <script type="text/javascript">
         $(function() {
-             $('#id-test').datepicker();
+             $('#id_start_date').datepicker();
+             $('#id_end_date').datepicker();
          });
      </script>
 {% endblock %}
@@ -10,7 +11,6 @@
  {% block content %}
     <h1>CSV Data Download Form</h1>
     <form action="" method="post">
-    <input type="text" id ="id-test" class="hasDatepicker""  name="lastname">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="DOWNLOAD CSV DATA" />
