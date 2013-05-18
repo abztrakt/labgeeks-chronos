@@ -12,18 +12,24 @@ from labgeeks.utils import ReportCalendar, TimesheetCalendar
 from django.contrib.auth.models import User
 from datetime import date
 from django.utils.safestring import mark_safe
-
 from labgeeks_people.models import UserProfile
 from django.http import HttpResponse
 from django.template import loader, Context
 from django.shortcuts import render
-import datetime
 
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
     return render_to_response('options.html', locals())
+
+
+def csv_daily_data(request, year, month, day):
+    """ Lets you download csv data for a particular date
+    """
+    shifts = get_shifts(year, month, day)
+    response = csv_data_generator(shifts)
+    return response
 
 
 def csv_data_former(request):
@@ -35,29 +41,46 @@ def csv_data_former(request):
         if form.is_valid():
             end_date = form.cleaned_data['end_date']
             start_date = form.cleaned_data['start_date']
-            response = HttpResponse(mimetype='text/csv')
-            response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
-            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d %X"))
-            shifter = []
-
-            for shift in shifts:
-                data_shifts = [
-                    shift.person,
-                    shift.intime,
-                    shift.outtime,
-                    shift.length,
-                ]
-                shifter.append(data_shifts)
-            t = loader.get_template('csv_template.txt')
-            c = Context({
-                        'data': shifter,
-                        })
-            response.write(t.render(c))
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 23:59:59"))
+            response = csv_data_generator(shifts)
             return response
-
     else:
         form = DataForm()
     return render_to_response('csv_form.html', locals(), context_instance=RequestContext(request))
+
+
+def csv_data_generator(shifts):
+    """ Helper function to generate and download shift data
+    """
+    shifter = []
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
+    for shift in shifts:
+    # Splits up shiftnotes into two separate variables if there are two to
+    # begin with
+        if "\n\n" in shift.shiftnote:
+            shiftnotes = shift.shiftnote.split("\n\n")
+            shift.shiftinnote = shiftnotes[0]
+            shift.shiftoutnote = shiftnotes[1]
+        else:
+            shift.shiftinnote = shift.shiftnote
+            shift.shiftoutnote = ""
+        data_shifts = [
+            shift.person,
+            shift.intime.strftime("%Y-%m-%d"),
+            shift.intime.strftime("%X"),
+            shift.outtime.strftime("%X"),
+            shift.shiftinnote,
+            shift.shiftoutnote,
+        ]
+        shifter.append(data_shifts)
+    t = loader.get_template('csv_template.txt')
+    c = Context({
+                'data': shifter,
+                }
+                )
+    response.write(t.render(c))
+    return response
 
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
@@ -198,18 +221,18 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
     """ This view is used to display all shifts in a time frame. Only users
     with specific permissions can view this information.
     """
-
+    staff_report_checker = True
     if not request.user.is_staff:
         message = 'Permission Denied'
         reason = 'You do not have permission to visit this part of the page.'
 
         return render_to_response('fail.html', locals())
 
-    return specific_report(request, user, year, month, day, week, payperiod)
+    return specific_report(request, user, year, month, day, week, payperiod, staff_report_checker)
 
 
 @login_required
-def specific_report(request, user, year, month, day=None, week=None, payperiod=None):
+def specific_report(request, user, year, month, day=None, week=None, payperiod=None, staff_report_checker=None):
     """ This view is used when viewing specific shifts in the given day.
     """
 

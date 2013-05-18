@@ -22,6 +22,9 @@ $(document).ready(function()
 <div class="section">
     <h1>Specific Report</h1>
     <h2>{{ description }}</h2>
+    {% if staff_report_checker %}
+        <a href='{% url csv_daily_data year month day %}'>DOWNLOAD CSV DATA</a>
+    {% endif %}
 </div>
 <table id="report" class="regular_table report_results">
     <thead>

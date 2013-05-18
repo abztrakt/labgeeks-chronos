@@ -1,11 +1,13 @@
 from django.conf.urls.defaults import *
 
+
 urlpatterns = patterns('labgeeks_chronos.views',
                        (r'^report$', 'report'),
                        url(r'^time/$', 'time', name="Time"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)$', 'report', name="Report-Monthly"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)/week/(?P<week>\w+)', 'staff_report', name="Report-Weekly"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)/payperiod/(?P<payperiod>\w+)', 'staff_report', name="Report-Payperiod"),
+                       url(r'^report/export/(?P<year>\w+)/(?P<month>\w+)/(?P<day>\w+)', 'csv_daily_data', name="csv_daily_data"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)/(?P<day>\w+)', 'staff_report', name="Report-Specific"),
                        url(r'^report/export', 'csv_data_former', name="csv-former"),
                        (r'^time/success/$', 'success'),
