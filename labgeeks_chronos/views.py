@@ -16,6 +16,9 @@ from labgeeks_people.models import UserProfile
 from django.http import HttpResponse
 from django.template import loader, Context
 from django.shortcuts import render
+from operator import itemgetter
+import collections
+from collections import defaultdict
 
 
 def list_options(request):
@@ -28,7 +31,7 @@ def csv_daily_data(request, year, month, day):
     """ Lets you download csv data for a particular date
     """
     shifts = get_shifts(year, month, day)
-    response = csv_data_generator(shifts)
+    response = csv_data_generator(shifts, year, month, day)
     return response
 
 
@@ -36,6 +39,8 @@ def csv_data_former(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
+    #TODO Make it compatible with the csv_data_generator
+
     if request.method == 'POST':
         form = DataForm(request.POST)
         if form.is_valid():
@@ -49,34 +54,58 @@ def csv_data_former(request):
     return render_to_response('csv_form.html', locals(), context_instance=RequestContext(request))
 
 
-def csv_data_generator(shifts):
+def csv_data_generator(shifts, year, month, day):
     """ Helper function to generate and download shift data
     """
-    shifter = []
+    multiple_shifts = {1: 'First', 2: 'Second', 3: 'Third', 4: 'Fourth', 5: 'Fifth', 6: 'Sixth', 7: 'Seventh', 8: 'Eighth', 9: 'Nineth'}
     response = HttpResponse(mimetype='text/csv')
     response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
-    for shift in shifts:
-    # Splits up shiftnotes into two separate variables if there are two to
-    # begin with
-        if "\n\n" in shift.shiftnote:
-            shiftnotes = shift.shiftnote.split("\n\n")
-            shift.shiftinnote = shiftnotes[0]
-            shift.shiftoutnote = shiftnotes[1]
-        else:
-            shift.shiftinnote = shift.shiftnote
-            shift.shiftoutnote = ""
-        data_shifts = [
-            shift.person,
-            shift.intime.strftime("%Y-%m-%d"),
-            shift.intime.strftime("%X"),
-            shift.outtime.strftime("%X"),
-            shift.shiftinnote,
-            shift.shiftoutnote,
-        ]
-        shifter.append(data_shifts)
+    temp = []
+    for i in shifts:
+        temp.append(i.person)
+    all_people_working = set(temp)
+
+    shifter = defaultdict(list)
+    for worker in all_people_working:
+        shifts_per_person = Shift.objects.filter(intime__year=int(year), intime__month=int(month), intime__day=int(day), person=worker)
+        counter = 1
+        for each in shifts_per_person:
+            # Splits up shiftnotes into two separate variables if there are two to
+            # begin with
+
+            if "\n\n" in each.shiftnote:
+                shiftnotes = each.shiftnote.split("\n\n")
+                each.shiftinnote = shiftnotes[0]
+                each.shiftoutnote = shiftnotes[1]
+            else:
+                each.shiftinnote = each.shiftnote
+                each.shiftoutnote = ""
+
+            if each.outtime is None:
+                out = "Not Clocket Out"
+            else:
+                out = each.outtime.strftime("%X")
+            data_shifts = [
+                each.intime.strftime("%Y-%m-%d"),
+                each.person.__str__(),
+                each.intime.strftime("%X"),
+                out,
+                each.shiftinnote.__str__().lstrip('IN: '),
+                each.shiftoutnote.__str__().lstrip('OUT: '),
+                multiple_shifts[counter],
+            ]
+            shifter[worker.__str__()].append(data_shifts)
+            counter = counter + 1
+
+    final_data = []
+    for value in shifter.itervalues():
+        for v in value:
+            final_data.append(v)
+
+    sorted_data = sorted(final_data, key=itemgetter(1))
     t = loader.get_template('csv_template.txt')
     c = Context({
-                'data': shifter,
+                'data': sorted_data,
                 }
                 )
     response.write(t.render(c))
