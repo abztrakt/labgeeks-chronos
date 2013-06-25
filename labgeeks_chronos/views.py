@@ -57,7 +57,6 @@ def csv_data_former(request):
 def csv_data_generator(shifts, year, month, day):
     """ Helper function to generate and download shift data
     """
-    multiple_shifts = {1: 'First', 2: 'Second', 3: 'Third', 4: 'Fourth', 5: 'Fifth', 6: 'Sixth', 7: 'Seventh', 8: 'Eighth', 9: 'Nineth'}
     response = HttpResponse(mimetype='text/csv')
     response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
     temp = []
@@ -92,7 +91,7 @@ def csv_data_generator(shifts, year, month, day):
                 out,
                 each.shiftinnote.__str__().lstrip('IN: '),
                 each.shiftoutnote.__str__().lstrip('OUT: '),
-                multiple_shifts[counter],
+                counter,
             ]
             shifter[worker.__str__()].append(data_shifts)
             counter = counter + 1
@@ -102,7 +101,17 @@ def csv_data_generator(shifts, year, month, day):
         for v in value:
             final_data.append(v)
 
+    header = [
+        "date",
+        "netid",
+        "in",
+        "out",
+        "comm_in",
+        "comm_out",
+        "shift",
+    ]
     sorted_data = sorted(final_data, key=itemgetter(1))
+    sorted_data.insert(0, header)
     t = loader.get_template('csv_template.txt')
     c = Context({
                 'data': sorted_data,
