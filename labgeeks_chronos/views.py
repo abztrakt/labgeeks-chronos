@@ -47,14 +47,14 @@ def csv_data_former(request):
             end_date = form.cleaned_data['end_date']
             start_date = form.cleaned_data['start_date']
             shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 23:59:59"))
-            response = csv_data_generator(shifts)
+            response = csv_data_generator(shifts, end_date=end_date, start_date=start_date)
             return response
     else:
         form = DataForm()
     return render_to_response('csv_form.html', locals(), context_instance=RequestContext(request))
 
 
-def csv_data_generator(shifts, year, month, day):
+def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, start_date=None):
     """ Helper function to generate and download shift data
     """
     response = HttpResponse(mimetype='text/csv')
@@ -66,7 +66,13 @@ def csv_data_generator(shifts, year, month, day):
 
     shifter = defaultdict(list)
     for worker in all_people_working:
-        shifts_per_person = Shift.objects.filter(intime__year=int(year), intime__month=int(month), intime__day=int(day), person=worker)
+        if end_date and start_date:
+            shifts_per_person = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 23:59:59"), person=worker)
+        elif year and month and day:
+            shifts_per_person = Shift.objects.filter(intime__year=int(year), intime__month=int(month), intime__day=int(day), person=worker)
+        else:
+            shifts_per_person = Shift.objects.all()
+
         counter = 1
         for each in shifts_per_person:
             # Splits up shiftnotes into two separate variables if there are two to
