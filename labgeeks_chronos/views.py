@@ -58,7 +58,7 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
     """ Helper function to generate and download shift data
     """
     response = HttpResponse(mimetype='text/csv')
-    response['Content-Disposition'] = 'attachment; filename = "csv_data.csv"'
+    response['Content-Disposition'] = 'attachment; filename = "chronos.csv"'
     temp = []
     for i in shifts:
         temp.append(i.person)
@@ -98,6 +98,7 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
                 each.shiftinnote.__str__().lstrip('IN: '),
                 each.shiftoutnote.__str__().lstrip('OUT: '),
                 counter,
+                each.in_clock.name,
             ]
             shifter[worker.__str__()].append(data_shifts)
             counter = counter + 1
@@ -115,6 +116,7 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
         "comm_in",
         "comm_out",
         "shift",
+        "punchclock",
     ]
     sorted_data = sorted(final_data, key=itemgetter(1))
     sorted_data.insert(0, header)
