@@ -4,7 +4,7 @@ from django.core.context_processors import csrf
 from django.shortcuts import render_to_response, get_object_or_404, \
     HttpResponseRedirect
 from django.template import RequestContext
-from labgeeks_chronos.forms import ShiftForm, DataForm
+from labgeeks_chronos.forms import ShiftForm, DataForm, HourForm
 from labgeeks_chronos.models import Shift, Punchclock
 from random import choice
 
@@ -39,8 +39,6 @@ def csv_data_former(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
-    #TODO Make it compatible with the csv_data_generator
-
     if request.method == 'POST':
         form = DataForm(request.POST)
         if form.is_valid():
@@ -133,6 +131,40 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
                 )
     response.write(t.render(c))
     return response
+
+
+def get_total_hours(request):
+    """This method returns the cumulative hours worked by all employees in the
+       range entered by the user in the form.
+    """
+    if request.method == 'POST':
+        form = HourForm(request.POST)
+        if form.is_valid():
+            end_date = form.cleaned_data['end_date']
+            start_date = form.cleaned_data['start_date']
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 23:59:59"))
+            temp = []
+            for i in shifts:
+                temp.append(i.person)
+            all_people_working = set(temp)
+            all_people_working = list(all_people_working)
+            shifter = defaultdict(list)
+            totaler = []
+            for worker in all_people_working:
+                shifts_per_person = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 23:59:59"), person=worker)
+                total = 0.0
+                for each in shifts_per_person:
+                    total = total + float(each.length())
+                total_per_person = [
+                    worker.__str__(),
+                    round(total, 2),
+                ]
+                totaler.append(total_per_person)
+
+            return render_to_response('total_hours.html', locals(), context_instance=RequestContext(request))
+    else:
+        form = DataForm()
+    return render_to_response('total_hours.html', locals(), context_instance=RequestContext(request))
 
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):

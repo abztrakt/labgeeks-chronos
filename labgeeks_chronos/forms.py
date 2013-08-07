@@ -7,6 +7,11 @@ class DataForm(forms.Form):
     end_date = forms.DateField()
 
 
+class HourForm(forms.Form):
+    start_date = forms.DateField()
+    end_date = forms.DateField()
+
+
 class ShiftForm(forms.ModelForm):
     """ The form that submits a sign in / sign out of a shift.
     """

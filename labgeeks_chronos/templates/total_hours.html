@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block pageJS %}
+    <script type="text/javascript" src="/static/js/jquery.tablesorter.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+             $('#id_start_date').datepicker();
+             $('#id_end_date').datepicker();
+             $(".people").tablesorter(
+                {
+                cssAsc: 'headerSortUp',
+                cssDesc: 'headerSortDown',
+                cssHeader: 'header',
+                }
+            );
+         });
+    </script>
+{% endblock %}
+
+ {% block content %}
+    <h1>Total Hours</h1>
+    <form action="" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Get Total Hours" />
+    </form>
+    {% if totaler %}
+        <table class="people">
+            <thead>
+                <tr>
+                    <th class="header"><a href="#">NetID</a></th>
+                    <th class="header"><a href="#">Hours Worked</a></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for each in totaler  %}
+                <tr>
+                    <td>{{ each.0 }}</td>
+                    <td>{{ each.1 }}</td>
+                </tr>
+            {% endfor  %}
+            </tbody>
+        </table>
+    {% endif %}
+ {% endblock %}
+
+
