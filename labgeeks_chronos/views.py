@@ -96,10 +96,7 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
                 each.shiftinnote.__str__().lstrip('IN: '),
                 each.shiftoutnote.__str__().lstrip('OUT: '),
                 counter,
-                each.in_clock.name,
                 each.in_clock.location,
-                each.out_clock.name,
-                each.out_clock.location,
             ]
             shifter[worker.__str__()].append(data_shifts)
             counter = counter + 1
@@ -117,10 +114,7 @@ def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, s
         "comm_in",
         "comm_out",
         "shift",
-        "punchclock_in_name",
         "punchclock_in_location",
-        "punchclock_out_name",
-        "punchclock_out_location",
     ]
     sorted_data = sorted(final_data, key=itemgetter(1))
     sorted_data.insert(0, header)
