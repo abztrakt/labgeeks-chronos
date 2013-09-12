@@ -4,10 +4,10 @@ from django.core.context_processors import csrf
 from django.shortcuts import render_to_response, get_object_or_404, \
     HttpResponseRedirect
 from django.template import RequestContext
-from labgeeks_chronos.forms import ShiftForm, DataForm, HourForm
+from labgeeks_chronos.forms import LateForm, ShiftForm, DataForm, HourForm
 from labgeeks_chronos.models import Shift, Punchclock
 from random import choice
-
+from labgeeks_chronos.utils import *
 from labgeeks.utils import ReportCalendar, TimesheetCalendar
 from django.contrib.auth.models import User
 from datetime import date
@@ -33,6 +33,43 @@ def csv_daily_data(request, year, month, day):
     shifts = get_shifts(year, month, day)
     response = csv_data_generator(shifts, year, month, day)
     return response
+
+def late_tool(request):
+    """ Generates a form for downloading a particular time period
+        shifts in CSV format.
+    """
+    if request.method == 'POST':
+        form = LateForm(request.POST)
+        if form.is_valid():
+            start_date = form.cleaned_data['start_date']
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=start_date.strftime("%Y-%m-%d 23:59:59"))
+            chronos=[]
+            pclock={}
+            date= start_date.strftime("%Y-%m-%d")
+
+            for shift in shifts:
+                if "\n\n" in shift.shiftnote:
+                    shiftnotes = shift.shiftnote.split("\n\n")
+                    shiftinnote = shiftnotes[0]
+                    shiftoutnote = shiftnotes[1]
+                else:
+                    shiftinnote = shift.shiftnote
+                    shiftoutnote = ""
+
+                pclock["comm_in"] =shiftinnote
+                pclock["netid"] =shift.person.username
+                pclock["punchclock_in_location"] =shift.in_clock.location.name
+                pclock["shift"] =shift.id
+                pclock["out"] = shift.outtime.strftime("%X")
+                pclock["in"] =shift.intime.strftime("%X")
+                pclock["comm_out"] = shiftoutnote
+                chronos.append(pclock)
+            msg = interpet_results(chronos, date)
+            return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
+
+    else:
+        form = LateForm()
+    return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
 
 def csv_data_former(request):
