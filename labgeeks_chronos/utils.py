@@ -5,7 +5,7 @@ def read_api(date):
     #date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
     url="https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift?date=" +date
 
-    request = requests.get("http://depts.washington.edu/hdleads/api/v1/2013-08-08")
+    request = requests.get(url)
     return request.json()
 
 def compare(chronos, date):
