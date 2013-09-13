@@ -1,11 +1,20 @@
 import datetime, json, requests
+from django.conf import settings
 
 def read_api(date):
     #request = requests.get("https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift/date")
     #date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
-    url="https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift?date=" +date
 
-    request = requests.get(url)
+    # eventually hdleads shouldn't be hardcoded here, i set things up so we can loop over 
+    # multiple schedman apis
+    app = settings.SCHEDMAN_API
+    app_url = app['hdleads']['url']
+    url= "%s/ws/v1/shift?date=%s" % (app_url, date)
+
+    cert = app['hdleads']['cert']
+    key = app['hdleads']['key']
+
+    request = requests.get(url, cert=(cert, key))
     return request.json()
 
 def compare(chronos, date):
