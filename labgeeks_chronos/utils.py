@@ -1,11 +1,21 @@
-import datetime, json, requests
+from datetime import datetime, timedelta
+import json, requests
+from django.conf import settings
 
 def read_api(date):
     #request = requests.get("https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift/date")
     #date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
-    url="https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift?date=" +date
 
-    request = requests.get("http://depts.washington.edu/hdleads/api/v1/2013-08-08")
+    # eventually hdleads shouldn't be hardcoded here, i set things up so we can loop over 
+    # multiple schedman apis
+    app = settings.SCHEDMAN_API
+    app_url = app['hdleads']['url']
+    url= "%s/ws/v1/shift?date=%s" % (app_url, date)
+
+    cert = app['hdleads']['cert']
+    key = app['hdleads']['key']
+
+    request = requests.get(url, cert=(cert, key))
     return request.json()
 
 def compare(chronos, date):
@@ -46,12 +56,12 @@ def get_match(potential_matches, sched_shift):
     """Given a list of potential punchclock shifts and a scheduled shift that could be associated with the potential punchclock shifts, will find the correct punchlock shift that matches with the scheduled shift. If none is found, then that means they did not show up for that shift."""
 
     match = []
-    threshold = datetime.timedelta(hours=23)
+    threshold = timedelta(hours=23)
 
     #For the most part, the in punchclock time closest to the schedueled shift is the best match
     for chron_shift in potential_matches:
-        chron_in = datetime.datetime.strptime(chron_shift["in"], "%H:%M:%S")
-        sched_in = datetime.datetime.strptime(sched_shift["In"], "%H:%M:%S")
+        chron_in = datetime.strptime(chron_shift["in"], "%H:%M:%S")
+        sched_in = datetime.strptime(sched_shift["In"], "%H:%M:%S")
         diff = abs(sched_in - chron_in)
         if diff < threshold:
             #emptys the lists and updates it with a better match
@@ -74,13 +84,13 @@ def find_tardy(sched_shift, match):
     if sched_shift["Out"] == "24:00:00":
         sched_shift["Out"] = "00:00:00"
 
-    sched_out = datetime.datetime.strptime(sched_shift["Out"], "%H:%M:%S")
-    chron_out = datetime.datetime.strptime(details["shift"]["out"], "%H:%M:%S")
+    sched_out = datetime.strptime(sched_shift["Out"], "%H:%M:%S")
+    chron_out = datetime.strptime(details["shift"]["out"], "%H:%M:%S")
 
     diff_in = abs(details["chron_in"] - details["sched_in"])
     diff_out = abs(chron_out - sched_out)
 
-    threshold = datetime.timedelta(minutes=6)
+    threshold = timedelta(minutes=6)
     info = {"netid": sched_shift["netid"]}
 
     #figures out if the person clocked in late or early, or clocked out late or early
