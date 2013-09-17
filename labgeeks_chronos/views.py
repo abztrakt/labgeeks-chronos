@@ -24,7 +24,7 @@ from collections import defaultdict
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
-    return render_to_response('options.html', locals())
+    return render_to_response('options.html', locals(), context_instance=RequestContext(request))
 
 
 def csv_daily_data(request, year, month, day):
@@ -34,6 +34,8 @@ def csv_daily_data(request, year, month, day):
     response = csv_data_generator(shifts, year, month, day)
     return response
 
+
+@login_required
 def late_tool(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
@@ -415,7 +417,7 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
         }
         shifts.append(data)
 
-    return render_to_response('specific_report.html', locals())
+    return render_to_response('specific_report.html', locals(), context_instance=RequestContext(request))
 
 
 @login_required
@@ -463,7 +465,7 @@ def report(request, user=None, year=None, month=None):
         'today_month': date.today().month,
     }
 
-    return render_to_response('report.html', args)
+    return render_to_response('report.html', args, context_instance=RequestContext(request))
 
 
 @login_required
@@ -536,7 +538,7 @@ def personal_report(request, user=None, year=None, month=None):
         'punchclock_message': choice(punchclock_message),
     }
 
-    return render_to_response('options.html', args)
+    return render_to_response('options.html', args, context_instance=RequestContext(request))
 
 
 @login_required
@@ -629,7 +631,6 @@ def time(request):
             user = user.first_name
     except UserProfile.DoesNotExist:
         user = user.first_name
-
     return render_to_response('time.html', locals(), context_instance=RequestContext(request))
 
 
@@ -673,4 +674,4 @@ def success(request):
     except UserProfile.DoesNotExist:
         user = user.first_name
 
-    return render_to_response('success.html', locals())
+    return render_to_response('success.html', locals(), context_instance=RequestContext(request))
