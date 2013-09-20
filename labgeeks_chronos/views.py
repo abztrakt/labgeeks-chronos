@@ -66,6 +66,7 @@ def late_tool(request):
                 pclock["in"] =shift.intime.strftime("%X")
                 pclock["comm_out"] = shiftoutnote
                 chronos.append(pclock)
+                pclock = {}
             msg = interpet_results(chronos, date)
             return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
