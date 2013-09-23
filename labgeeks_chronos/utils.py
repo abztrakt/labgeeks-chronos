@@ -9,11 +9,11 @@ def read_api(date):
     # eventually hdleads shouldn't be hardcoded here, i set things up so we can loop over 
     # multiple schedman apis
     app = settings.SCHEDMAN_API
-    app_url = app['hdleads']['url']
+    app_url = app['hdleads']
     url= "%s/ws/v1/shift?date=%s" % (app_url, date)
 
-    cert = app['hdleads']['cert']
-    key = app['hdleads']['key']
+    cert = settings.CERT_FILE
+    key = settings.KEY_FILE
 
     request = requests.get(url, cert=(cert, key))
     return request.json()
