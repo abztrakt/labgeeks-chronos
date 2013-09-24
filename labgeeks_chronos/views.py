@@ -45,9 +45,9 @@ def late_tool(request):
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=start_date.strftime("%Y-%m-%d 23:59:59"))
-            chronos=[]
-            pclock={}
-            date= start_date.strftime("%Y-%m-%d")
+            chronos = []
+            pclock = {}
+            date = start_date.strftime("%Y-%m-%d")
 
             for shift in shifts:
                 if "\n\n" in shift.shiftnote:
@@ -58,14 +58,15 @@ def late_tool(request):
                     shiftinnote = shift.shiftnote
                     shiftoutnote = ""
 
-                pclock["comm_in"] =shiftinnote
-                pclock["netid"] =shift.person.username
-                pclock["punchclock_in_location"] =shift.in_clock.location.name
-                pclock["shift"] =shift.id
+                pclock["comm_in"] = shiftinnote
+                pclock["netid"] = shift.person.username
+                pclock["punchclock_in_location"] = shift.in_clock.location.name
+                pclock["shift"] = shift.id
                 pclock["out"] = shift.outtime.strftime("%X")
-                pclock["in"] =shift.intime.strftime("%X")
+                pclock["in"] = shift.intime.strftime("%X")
                 pclock["comm_out"] = shiftoutnote
                 chronos.append(pclock)
+                pclock = {}
             msg = interpet_results(chronos, date)
             return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
