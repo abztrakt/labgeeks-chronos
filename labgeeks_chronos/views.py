@@ -19,12 +19,22 @@ from django.shortcuts import render
 from operator import itemgetter
 import collections
 from collections import defaultdict
+import calendar
 
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
     return render_to_response('options.html', locals())
+
+
+def monthly_list_shifts(request, user, year, month):
+    """ Lists the monthly shifts/timesheets all together for an employee
+    """
+    mname = calendar.month_name[int(month)]
+    user = User.objects.get(username=user)
+    shifts = Shift.objects.filter(intime__year=int(year), intime__month=int(month), person=user)
+    return render_to_response('monthly_list_shifts.html', locals())
 
 
 def csv_daily_data(request, year, month, day):
