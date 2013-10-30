@@ -10,6 +10,7 @@ setup(
     packages = ['labgeeks_chronos',],
     install_requires = [
         'setuptools',
+        'requests',
         'labgeeks-people',
         'South==0.7.3',
     ],

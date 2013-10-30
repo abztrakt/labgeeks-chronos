@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block pageJS %}
+     <script type="text/javascript">
+        $(function() {
+             $('#id_start_date').datepicker();
+         });
+     </script>
+{% endblock %}
+
+ {% block content %}
+    <h1>Late Tool</h1>
+    <form action="" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Check for late/early employees" />
+    </form>
+    <ul>
+    {% for m in msg %}
+        <li> {{ m }} </li>
+    {% endfor %}
+    </ul>
+ {% endblock %}
+

@@ -6,7 +6,9 @@ class DataForm(forms.Form):
     start_date = forms.DateField()
     end_date = forms.DateField()
 
-
+class LateForm(forms.Form):
+    start_date = forms.DateField()
+    
 class HourForm(forms.Form):
     start_date = forms.DateField()
     end_date = forms.DateField()
