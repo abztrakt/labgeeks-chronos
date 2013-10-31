@@ -54,6 +54,7 @@ def late_tool(request):
         form = LateForm(request.POST)
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
+            service = form.cleaned_data['service']
             shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=start_date.strftime("%Y-%m-%d 23:59:59"))
             chronos = []
             pclock = {}
@@ -77,7 +78,7 @@ def late_tool(request):
                 pclock["comm_out"] = shiftoutnote
                 chronos.append(pclock)
                 pclock = {}
-            msg = interpet_results(chronos, date)
+            msg = interpet_results(chronos, date, service)
             return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
     else:

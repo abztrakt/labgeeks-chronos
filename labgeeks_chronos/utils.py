@@ -1,34 +1,47 @@
 from datetime import datetime, timedelta
-import json, requests
+import json
+import requests
 from django.conf import settings
 
-def read_api(date):
+
+def read_api(date, service):
     #request = requests.get("https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift/date")
     #date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
 
-    # eventually hdleads shouldn't be hardcoded here, i set things up so we can loop over 
+    # eventually hdleads shouldn't be hardcoded here, i set things up so we can loop over
     # multiple schedman apis
     app = settings.SCHEDMAN_API
-    app_url = app['hdleads']
-    url= "%s/ws/v1/shift?date=%s" % (app_url, date)
+    app_url = app[service]
+    try:
+        url = "%s/ws/v1/shift?date=%s" % (app_url, date)
+    except RuntimeError:
+        pass
+    else:
+        url = "%s/ws/v1/%s" % (app_url, date)
 
-    cert = settings.CERT_FILE
-    key = settings.KEY_FILE
+    try:
+        cert = settings.CERT_FILE
+        key = settings.KEY_FILE
+        request = requests.get(url, cert=(cert, key))
+    except AttributeError:
+        request = requests.get(url)
+        pass
+    else:
+        request = requests.get(url)
 
-    request = requests.get(url, cert=(cert, key))
     return request.json()
 
-def compare(chronos, date):
+
+def compare(chronos, date, service):
     """Given a list of shift of punchclocks, returns shifts where people did not show up and shifts where people clock in/out early/late."""
 
-    raw = read_api(date)
-
+    raw = read_api(date, service)
     no_shows = []
     conflicts = []
 
     #for each netid in the scheduler, finds all shifts in chronos that can be potential matches
     for netid in raw["Shifts"].keys():
-        for shift in raw["Shifts"][netid]: #each netid/person might have more than one scheduled shift so have to iterate through each one before moving onto a new person
+        for shift in raw["Shifts"][netid]:  # each netid/person might have more than one scheduled shift so have to iterate through each one before moving onto a new person
             shift["netid"] = netid
             potential_matches = []
             for i in range(len(chronos)):
@@ -52,6 +65,7 @@ def compare(chronos, date):
 
     return (no_shows, clean_conflicts)
 
+
 def get_match(potential_matches, sched_shift):
     """Given a list of potential punchclock shifts and a scheduled shift that could be associated with the potential punchclock shifts, will find the correct punchlock shift that matches with the scheduled shift. If none is found, then that means they did not show up for that shift."""
 
@@ -67,13 +81,14 @@ def get_match(potential_matches, sched_shift):
             #emptys the lists and updates it with a better match
             del match[:]
             match.append({"shift": chron_shift, "chron_in": chron_in, "sched_in": sched_in})
-            threshold = diff 
+            threshold = diff
 
     #Once a match is found, it figures out if that person is late or not.
     if len(match) > 0:
         return find_tardy(sched_shift, match)
     else:
         return "no_show"
+
 
 def find_tardy(sched_shift, match):
     """Given a scheduled shift and the matching punchclock shift, will determine if that person clocked in early/late or clocked out early/late. If it does find an infraction, it will return general information about the shift."""
@@ -111,31 +126,29 @@ def find_tardy(sched_shift, match):
             info.update({"diff_out_late": diff_out})
             return info
 
-def interpet_results(chronos_list, date):
+
+def interpet_results(chronos_list, date, service):
     """Given alist of shift of punchclocks, converts the late and missed shifts into something readable and writes it to a file."""
-    comp = compare(chronos_list, date)
+    comp = compare(chronos_list, date, service)
     no_shows = comp[0]
     tardies = comp[1]
-
 
     msg = []
 
     if len(no_shows) > 0:
         for person in no_shows:
-            msg.append("%s did not show up to his/her shift that started at %s and ended at %s.\n" %(person['netid'], person['In'], person['Out']))
+            msg.append("%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out']))
 
     template = "%s clocked %s %s by %s. He/she clocked %s at %s, when he/she should have clocked %s at %s. He/she did leave this comment: %s.\n"
 
     if len(tardies) > 0:
         for student in tardies:
             if "diff_in_early" in student:
-                msg.append(template %(student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in']))
+                msg.append(template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in']))
             elif "diff_in_late" in student:
-                msg.append(template %(student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in']))
+                msg.append(template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in']))
             elif "diff_out_early" in student:
-                msg.append(template %(student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out']))
+                msg.append(template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out']))
             elif "diff_out_late" in student:
-                msg.append(template %(student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out']))
+                msg.append(template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out']))
     return msg
-
-
