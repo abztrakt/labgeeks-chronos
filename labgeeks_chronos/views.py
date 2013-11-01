@@ -50,6 +50,12 @@ def late_tool(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
+    if not request.user.is_staff:
+        message = 'Permission Denied'
+        reason = 'You do not have permission to visit this part of the page.'
+
+        return render_to_response('fail.html', locals())
+
     if request.method == 'POST':
         form = LateForm(request.POST)
         if form.is_valid():
@@ -90,6 +96,13 @@ def csv_data_former(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
+
+    if not request.user.is_staff:
+        message = 'Permission Denied'
+        reason = 'You do not have permission to visit this part of the page.'
+
+        return render_to_response('fail.html', locals())
+
     if request.method == 'POST':
         form = DataForm(request.POST)
         if form.is_valid():
