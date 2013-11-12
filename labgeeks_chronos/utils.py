@@ -15,8 +15,6 @@ def read_api(date, service):
     try:
         url = "%s/ws/v1/shift?date=%s" % (app_url, date)
     except RuntimeError:
-        pass
-    else:
         url = "%s/ws/v1/%s" % (app_url, date)
 
     try:
@@ -24,9 +22,6 @@ def read_api(date, service):
         key = settings.KEY_FILE
         request = requests.get(url, cert=(cert, key))
     except AttributeError:
-        request = requests.get(url)
-        pass
-    else:
         request = requests.get(url)
 
     return request.json()
