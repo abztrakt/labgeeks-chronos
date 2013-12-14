@@ -15,8 +15,8 @@
     <input type="submit" value="Check for late/early employees" />
     </form>
     <ul>
-    {% for m in msg %}
-        <li> {{ m }} </li>
+    {% for m, c  in msg.items %}
+        <li class="{{ c }}"> {{ m }} </li>
     {% endfor %}
     </ul>
  {% endblock %}
