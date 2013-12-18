@@ -1,6 +1,5 @@
 from django.conf.urls.defaults import *
 
-
 urlpatterns = patterns('labgeeks_chronos.views',
                        (r'^report$', 'report'),
                        url(r'^time/$', 'time', name="Time"),

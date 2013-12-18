@@ -13,14 +13,13 @@ from django.contrib.auth.models import User
 from datetime import date
 from django.utils.safestring import mark_safe
 from labgeeks_people.models import UserProfile
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.template import loader, Context
 from django.shortcuts import render
 from operator import itemgetter
 import collections
 from collections import defaultdict
 import calendar
-
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
@@ -378,20 +377,23 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
     """ This view is used when viewing specific shifts in the given day.
     """
 
-    #Grab shifts
-    if user:
-        user = User.objects.get(username=user)
+    try:
+        #Grab shifts
+        if user:
+            user = User.objects.get(username=user)
 
-    all_shifts = get_shifts(year, month, day, user, week, payperiod)
-
-    if day:
-        description = "Viewing shifts for %s." % (date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
-    elif week:
-        description = "Viewing shifts in week %d of %s." % (int(week), date(int(year), int(month), 1).strftime("%B, %Y"))
-    else:
-        # This should be a payperiod view
-        description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
-
+            all_shifts = get_shifts(year, month, day, user, week, payperiod)
+        if day:
+            description = "Viewing shifts for %s." % (date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
+        elif week:
+            description = "Viewing shifts in week %d of %s." % (int(week), date(int(year), int(month), 1).strftime("%B, %Y"))
+        else:
+            # This should be a payperiod view
+            description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
+    except:
+        template = loader.get_template('400.html')
+        context = RequestContext(request, {})
+        return HttpResponseBadRequest(template.render(context))
     # The following code is used for displaying the user's call_me_by or first
     # name.
     shifts = []
