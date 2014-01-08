@@ -93,7 +93,7 @@ def find_tardy(sched_shift, match):
     diff_in = abs(details["chron_in"] - details["sched_in"])
     diff_out = abs(chron_out - sched_out)
 
-    threshold = timedelta(minutes=2)
+    threshold = timedelta(minutes=6)
     info = {"netid": sched_shift["netid"]}
 
     #figures out if the person clocked in late or early, or clocked out late or early
@@ -120,7 +120,7 @@ def interpet_results(chronos_list, date, service):
     tardies = comp[1]
 
     msg = dict()
-    threshold = timedelta(minutes=5)
+    threshold = timedelta(minutes=6)
     if len(no_shows) > 0:
         for person in no_shows:
             msg["%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out'])] = "redder"

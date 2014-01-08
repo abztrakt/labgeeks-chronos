@@ -61,7 +61,8 @@ def late_tool(request):
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             service = form.cleaned_data['service']
-            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"))
+            end_date = start_date + timedelta(days=1)
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 04:00:00"))
             chronos = []
             pclock = {}
             date = start_date.strftime("%Y-%m-%d")
