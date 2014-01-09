@@ -93,18 +93,18 @@ def find_tardy(sched_shift, match):
     diff_in = abs(details["chron_in"] - details["sched_in"])
     diff_out = abs(chron_out - sched_out)
 
-    threshold = timedelta(minutes=6)
+    threshold = timedelta(minutes=1)
     info = {"netid": sched_shift["netid"]}
 
     #figures out if the person clocked in late or early, or clocked out late or early
     if diff_out > threshold:
-        info.update({"sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"]})
+        info.update({"sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"], "sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"]})
         if chron_out < sched_out:
             info.update({"diff_out_early": diff_out})
         else:
             info.update({"diff_out_late": diff_out})
     if diff_in > threshold:
-        info.update({"sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"]})
+        info.update({"sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"], "sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"]})
         if details["chron_in"] < details["sched_in"]:
             info.update({"diff_in_early": diff_in})
         else:
@@ -120,32 +120,32 @@ def interpet_results(chronos_list, date, service):
     tardies = comp[1]
 
     msg = dict()
-    threshold = timedelta(minutes=6)
+    threshold = timedelta(minutes=5)
     if len(no_shows) > 0:
         for person in no_shows:
-            msg["%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out'])] = "redder"
+            msg["%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out'])] = ["redder", person['netid'], "", "", person['Out'], "", "", person['In'], "", "No Show"]
 
     template = "%s clocked %s %s by %s. He/she clocked %s at %s, when he/she should have clocked %s at %s. He/she did leave this comment: %s.\n"
     if len(tardies) > 0:
         for student in tardies:
             if "diff_in_early" in student:
                 if student["diff_in_early"] > threshold:
-                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = "oranger"
+                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["oranger", student['netid'], student['diff_in_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Early"]
                 else:
-                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = "blacker"
+                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["blacker", student['netid'], student['diff_in_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Early"]
             elif "diff_in_late" in student:
                 if student["diff_in_late"] > threshold:
-                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = "redder"
+                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["redder", student['netid'], student['diff_in_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Late"]
                 else:
-                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = "blacker"
+                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["blacker", student['netid'], student['diff_in_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Late"]
             elif "diff_out_early" in student:
                 if student["diff_out_early"] > threshold:
-                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = "redder"
+                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["redder", student['netid'], student['diff_out_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Early"]
                 else:
-                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = "blacker"
+                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["blacker", student['netid'], student['diff_out_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Early"]
             elif "diff_out_late" in student:
                 if student["diff_out_late"] > threshold:
-                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = "oranger"
+                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["oranger", student['netid'], student['diff_out_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Late"]
                 else:
-                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = "blacker"
+                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["blacker", student['netid'], student['diff_out_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Late"]
     return msg

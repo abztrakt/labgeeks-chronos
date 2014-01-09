@@ -1,8 +1,17 @@
 {% extends 'base.html' %}
 {% block pageJS %}
+<script type="text/javascript" src="/static/js/jquery.tablesorter.min.js"></script>
      <script type="text/javascript">
         $(function() {
              $('#id_start_date').datepicker();
+             $("#report").tablesorter(
+                {
+                    cssAsc: 'headerSortUp',
+                    cssDesc: 'headerSortDown',
+                    cssHeader: 'header',
+                    headers: { 6: { sorter: false}, 7: {sorter: false} },
+                }
+            );
          });
      </script>
 {% endblock %}
@@ -14,10 +23,27 @@
     {{ form }}
     <input type="submit" value="Check for late/early employees" />
     </form>
-    <ul>
-    {% for m, c  in msg.items %}
-        <li> {{ m }} </li>
-    {% endfor %}
-    </ul>
+    <table id="report" class="regular_table report_results">
+        <thead>
+            <th class="header"><a href="#">Name</a></th>
+            <th class="header"><a href="#">Status</a></th>
+            <th class="header"><a href="#">Scheduled</a></th>
+            <th class="header"><a href="#">Actual</a></th>
+            <th class="header"><a href="#">Time Diff</a></th>
+            <th class="header"><a href="#">Note</a></th>
+        </thead>
+        <tbody>
+            {% for m, c  in msg.items %}
+            <tr>
+                <td>{{ c.1 }}</td>
+                <td class="{{ c.0  }}">{{ c.9 }}</td>
+                <td>{{ c.7 }} - {{ c.4 }}</td>
+                <td>{{ c.6 }} - {{ c.3 }}</td>
+                <td>{{ c.2 }}</td>
+                <td>{{ c.5 }} <br /> {{ c.8 }} </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
  {% endblock %}
 
