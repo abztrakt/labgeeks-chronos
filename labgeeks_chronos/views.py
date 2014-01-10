@@ -499,7 +499,7 @@ def personal_report(request, user=None, year=None, month=None):
     if not user:
         user = request.user
     else:
-        user = User.objects.get(username=user)
+        user = get_object_or_404(User, username=user)
 
     # If the year and month are not given, assume it is the current year &
     # month.
