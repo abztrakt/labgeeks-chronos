@@ -20,18 +20,20 @@ from operator import itemgetter
 import collections
 from collections import defaultdict
 import calendar
+from django.template import RequestContext
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
 
-    return render_to_response('options.html', {'request': request}, context_instance=RequestContext(request))
+    params = {'request': request,}    
+    return render_to_response('options.html', params, context_instance=RequestContext(request))
 
 
 def monthly_list_shifts(request, user, year, month):
     """ Lists the monthly shifts/timesheets all together for an employee
     """
-    params ={'request': request,}
+    params = {'request': request,}
     mname = calendar.month_name[int(month)]
     params['mname'] = mname
     user = User.objects.get(username=user)
