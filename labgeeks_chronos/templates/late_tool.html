@@ -25,7 +25,7 @@
     </form>
     <table id="report" class="regular_table report_results">
         <thead>
-            <th class="header"><a href="#">Name</a></th>
+            <th class="header"><a href="#">Name (NetID)</a></th>
             <th class="header"><a href="#">Status</a></th>
             <th class="header"><a href="#">Scheduled</a></th>
             <th class="header"><a href="#">Actual</a></th>
@@ -35,7 +35,7 @@
         <tbody>
             {% for m, c  in msg.items %}
             <tr>
-                <td>{{ c.1 }}</td>
+                <td>{{ c.10 }} ({{ c.1 }})</td>
                 <td class="{{ c.0  }}">{{ c.9 }}</td>
                 <td>{{ c.7 }} - {{ c.4 }}</td>
                 <td>{{ c.6 }} - {{ c.3 }}</td>

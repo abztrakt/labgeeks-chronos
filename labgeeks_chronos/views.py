@@ -76,9 +76,9 @@ def late_tool(request):
                 else:
                     shiftinnote = shift.shiftnote
                     shiftoutnote = ""
-
                 pclock["comm_in"] = shiftinnote
                 pclock["netid"] = shift.person.username
+                pclock["name"] = shift.person.first_name + " " + shift.person.last_name
                 pclock["punchclock_in_location"] = shift.in_clock.location.name
                 pclock["shift"] = shift.id
                 pclock["out"] = shift.outtime.strftime("%X")
