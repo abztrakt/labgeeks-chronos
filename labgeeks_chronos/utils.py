@@ -3,6 +3,7 @@ import json
 import requests
 from django.conf import settings
 from django.contrib.auth.models import User
+from datetime import datetime
 
 
 def read_api(date, service):
@@ -133,11 +134,31 @@ def interpet_results(chronos_list, date, service):
     threshold = timedelta(minutes=5)
     if len(no_shows) > 0:
         for person in no_shows:
+            sched_in_temp = datetime.strptime(person['In'], "%H:%M:%S")
+            person['In'] = sched_in_temp.strftime("%I:%M %p")
+
+            sched_out_temp = datetime.strptime(person['Out'], "%H:%M:%S")
+            person['Out'] = sched_out_temp.strftime("%I:%M %p")
+
             msg["%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out'])] = ["redder", person['netid'], "", "", person['Out'], "", "", person['In'], "", "No Show", person['name']]
 
     template = "%s clocked %s %s by %s. He/she clocked %s at %s, when he/she should have clocked %s at %s. He/she did leave this comment: %s.\n"
+
     if len(tardies) > 0:
         for student in tardies:
+            if "sched_in" in student:
+                sched_in_temp = datetime.strptime(student['sched_in'], "%H:%M:%S")
+                student['sched_in'] = sched_in_temp.strftime("%I:%M %p")
+
+                sched_out_temp = datetime.strptime(student['sched_out'], "%H:%M:%S")
+                student['sched_out'] = sched_out_temp.strftime("%I:%M %p")
+
+                clock_in_temp = datetime.strptime(student['clock_in'], "%H:%M:%S")
+                student['clock_in'] = clock_in_temp.strftime("%I:%M %p")
+
+                clock_out_temp = datetime.strptime(student['clock_out'], "%H:%M:%S")
+                student['clock_out'] = clock_out_temp.strftime("%I:%M %p")
+
             if "diff_in_early" in student:
                 if student["diff_in_early"] > threshold:
                     msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["oranger", student['netid'], student['diff_in_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Early", student['name']]
