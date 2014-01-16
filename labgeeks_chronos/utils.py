@@ -15,6 +15,7 @@ def read_api(date, service):
     try:
         url = "%s/ws/v1/shift?date=%s" % (app_url, date)
     except RuntimeError:
+        # this is so devs can have a locally hosted json dump to test against
         url = "%s/ws/v1/%s" % (app_url, date)
 
     try:
