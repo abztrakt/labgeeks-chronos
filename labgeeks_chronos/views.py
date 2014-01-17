@@ -60,12 +60,14 @@ def late_tool(request):
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             service = form.cleaned_data['service']
-            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=start_date.strftime("%Y-%m-%d 23:59:59"))
+            end_date = start_date + timedelta(days=1)
+            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 04:00:00"))
             chronos = []
             pclock = {}
             date = start_date.strftime("%Y-%m-%d")
-
             for shift in shifts:
+                if shift.outtime is None:
+                    continue
                 if "\n\n" in shift.shiftnote:
                     shiftnotes = shift.shiftnote.split("\n\n")
                     shiftinnote = shiftnotes[0]
@@ -73,9 +75,9 @@ def late_tool(request):
                 else:
                     shiftinnote = shift.shiftnote
                     shiftoutnote = ""
-
                 pclock["comm_in"] = shiftinnote
                 pclock["netid"] = shift.person.username
+                pclock["name"] = shift.person.first_name + " " + shift.person.last_name
                 pclock["punchclock_in_location"] = shift.in_clock.location.name
                 pclock["shift"] = shift.id
                 pclock["out"] = shift.outtime.strftime("%X")
