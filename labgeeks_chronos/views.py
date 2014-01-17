@@ -86,7 +86,7 @@ def late_tool(request):
                 pclock["comm_out"] = shiftoutnote
                 chronos.append(pclock)
                 pclock = {}
-            msg = interpet_results(chronos, date, service)
+            students = interpet_results(chronos, date, service)
             return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
     else:

@@ -33,14 +33,14 @@
             <th class="header"><a href="#">Note</a></th>
         </thead>
         <tbody>
-            {% for m, c  in msg.items %}
+            {% for student in students %}
             <tr>
-                <td>{{ c.10 }} ({{ c.1 }})</td>
-                <td class="{{ c.0  }}">{{ c.9 }}</td>
-                <td>{{ c.7 }} - {{ c.4 }}</td>
-                <td>{{ c.6 }} - {{ c.3 }}</td>
-                <td>{{ c.2 }}</td>
-                <td>{{ c.8 }} <br /> {{ c.5 }} </td>
+                <td>{{ student.name }} ({{ student.netid }})</td>
+                <td class="{{ student.color }}">{{ student.status }}</td>
+                <td>{{ student.sched_in }} - {{ student.sched_out }}</td>
+                <td>{{ student.clock_in }} - {{ student.clock_out }}</td>
+                <td>{{ student.change }}</td>
+                <td>{{ student.comm_in }} <br /> {{ student.comm_out }} </td>
             </tr>
             {% endfor %}
         </tbody>
