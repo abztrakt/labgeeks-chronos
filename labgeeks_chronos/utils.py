@@ -133,6 +133,8 @@ def interpet_results(chronos_list, date, service):
     threshold = timedelta(minutes=5)
     if len(no_shows) > 0:
         for person in no_shows:
+            if person["Out"] == "24:00:00":
+                person["Out"] = "00:00:00"
             sched_in_temp = datetime.strptime(person['In'], "%H:%M:%S")
             person['In'] = sched_in_temp.strftime("%I:%M %p")
 
