@@ -1,2 +1,10 @@
-<p>Sorry, your request could not be completed, so console yourself by watching these kittens.</p>
-<iframe width="420" height="315" src="//www.youtube.com/embed/yVjzd320gew" frameborder="0" allowfullscreen></iframe>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+    <p>Sorry, your request could not be completed.</p>
+    <p>You likely forgot to specify the payperiod.</p>
+    <p>The URL you are looking for should look like this:<br />http://chaos.s.uw.edu/chronos/NetID/2013/12/payperiod/<strong>1</strong></p>
+    <iframe width="420" height="315" src="//www.youtube.com/embed/yVjzd320gew" frameborder="0" allowfullscreen></iframe>
+</div>
+{% endblock %}
