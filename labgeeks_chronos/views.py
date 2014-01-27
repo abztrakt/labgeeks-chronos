@@ -378,7 +378,7 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
 def specific_report(request, user, year, month, day=None, week=None, payperiod=None, staff_report_checker=None):
     """ This view is used when viewing specific shifts in the given day.
     """
-
+    user = User.objects.get(username=user)
     try:
         #Grab shifts
         if user:
@@ -394,7 +394,7 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
             description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
     except:
         template = loader.get_template('400.html')
-        context = RequestContext(request, {})
+        context = RequestContext(request, locals())
         return HttpResponseBadRequest(template.render(context))
     # The following code is used for displaying the user's call_me_by or first
     # name.
