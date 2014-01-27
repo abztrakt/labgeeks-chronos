@@ -14,12 +14,6 @@ def read_api(date, service):
     app_url = app[service]
     try:
         url = "%s/ws/v1/shift?date=%s" % (app_url, date)
-    except RuntimeError:
-        # this is so devs can have a locally hosted json dump to test against
-        url = "%s/ws/v1/%s" % (app_url, date)
-
-    try:
-        url = "%s/ws/v1/shift?date=%s" % (app_url, date)
         cert = settings.CERT_FILE
         key = settings.KEY_FILE
         request = requests.get(url, cert=(cert, key))
@@ -135,19 +129,19 @@ def interpet_results(chronos_list, date, service):
     comp = compare(chronos_list, date, service)
     no_shows = comp[0]
     tardies = comp[1]
-    msg = dict()
+    msg = []
     threshold = timedelta(minutes=5)
     if len(no_shows) > 0:
         for person in no_shows:
+            if person["Out"] == "24:00:00":
+                person["Out"] = "00:00:00"
             sched_in_temp = datetime.strptime(person['In'], "%H:%M:%S")
             person['In'] = sched_in_temp.strftime("%I:%M %p")
 
             sched_out_temp = datetime.strptime(person['Out'], "%H:%M:%S")
             person['Out'] = sched_out_temp.strftime("%I:%M %p")
 
-            msg["%s did not show up to his/her shift that started at %s and ended at %s.\n" % (person['netid'], person['In'], person['Out'])] = ["redder", person['netid'], "", "", person['Out'], "", "", person['In'], "", "No Show", person['name']]
-
-    template = "%s clocked %s %s by %s. He/she clocked %s at %s, when he/she should have clocked %s at %s. He/she did leave this comment: %s.\n"
+            msg.append({"color": "redder", "netid": person['netid'], "change": "", "clock_out": "", "sched_out": person['Out'], "comm_out": "", "clock_in": "", "sched_in": person['In'], "comm_in": "", "status": "No Show", "name": person['name']})
 
     if len(tardies) > 0:
         for student in tardies:
@@ -166,22 +160,22 @@ def interpet_results(chronos_list, date, service):
 
             if "diff_in_early" in student:
                 if student["diff_in_early"] > threshold:
-                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["oranger", student['netid'], student['diff_in_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Early", student['name']]
+                    msg.append({"color": "oranger", "netid": student['netid'], "change": student['diff_in_early'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock In Early", "name": student['name']})
                 else:
-                    msg[template % (student['netid'], "in", "early", student['diff_in_early'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["blacker", student['netid'], student['diff_in_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Early", student['name']]
+                    msg.append({"color": "blacker", "netid": student['netid'], "change": student['diff_in_early'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock In Early", "name": student['name']})
             elif "diff_in_late" in student:
                 if student["diff_in_late"] > threshold:
-                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["redder", student['netid'], student['diff_in_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Late", student['name']]
+                    msg.append({"color": "redder", "netid": student['netid'], "change": student['diff_in_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock In Late", "name": student['name']})
                 else:
-                    msg[template % (student['netid'], "in", "late", student['diff_in_late'], "in", student['clock_in'], "in", student['sched_in'], student['comm_in'])] = ["blacker", student['netid'], student['diff_in_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock In Late", student['name']]
+                    msg.append({"color": "blacker", "netid": student['netid'], "change": student['diff_in_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock In Late", "name": student['name']})
             elif "diff_out_early" in student:
                 if student["diff_out_early"] > threshold:
-                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["redder", student['netid'], student['diff_out_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Early", student['name']]
+                    msg.append({"color": "redder", "netid": student['netid'], "change": student['diff_out_early'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Early", "name": student['name']})
                 else:
-                    msg[template % (student['netid'], "out", "early", student['diff_out_early'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["blacker", student['netid'], student['diff_out_early'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Early", student['name']]
+                    msg.append({"color": "blacker", "netid": student['netid'], "change": student['diff_out_early'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Early", "name": student['name']})
             elif "diff_out_late" in student:
                 if student["diff_out_late"] > threshold:
-                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["oranger", student['netid'], student['diff_out_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Late", student['name']]
+                    msg.append({"color": "oranger", "netid": student['netid'], "change": student['diff_out_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Late", "name": student['name']})
                 else:
-                    msg[template % (student['netid'], "out", "late", student['diff_out_late'], "out", student['clock_out'], "out", student['sched_out'], student['comm_out'])] = ["blacker", student['netid'], student['diff_out_late'], student['clock_out'], student['sched_out'], student['comm_out'], student['clock_in'], student['sched_in'], student['comm_in'], "Clock Out Late", student['name']]
+                    msg.append({"color": "blacker", "netid": student['netid'], "change": student['diff_out_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Late", "name": student['name']})
     return msg
