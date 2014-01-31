@@ -386,6 +386,7 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         if day:
             description = "Viewing shifts for %s." % (date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
+            all_shifts = get_shifts(year, month, day, user, week, payperiod)
         elif week:
             description = "Viewing shifts in week %d of %s." % (int(week), date(int(year), int(month), 1).strftime("%B, %Y"))
         else:
