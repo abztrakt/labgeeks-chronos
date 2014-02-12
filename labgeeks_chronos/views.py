@@ -20,20 +20,27 @@ from operator import itemgetter
 import collections
 from collections import defaultdict
 import calendar
+from django.template import RequestContext
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
-    return render_to_response('options.html', locals(), context_instance=RequestContext(request))
+
+    params = {'request': request,}    
+    return render_to_response('options.html', params, context_instance=RequestContext(request))
 
 
 def monthly_list_shifts(request, user, year, month):
     """ Lists the monthly shifts/timesheets all together for an employee
     """
+    params = {'request': request,}
     mname = calendar.month_name[int(month)]
+    params['mname'] = mname
     user = User.objects.get(username=user)
+    params['user'] = user
     shifts = Shift.objects.filter(intime__year=int(year), intime__month=int(month), person=user)
-    return render_to_response('monthly_list_shifts.html', locals())
+    params['shifts'] = shifts
+    return render_to_response('monthly_list_shifts.html', params)
 
 
 def csv_daily_data(request, year, month, day):
@@ -49,11 +56,11 @@ def late_tool(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
+    params = {'request': request,}
     if not request.user.is_staff:
-        message = 'Permission Denied'
-        reason = 'You do not have permission to visit this part of the page.'
-
-        return render_to_response('fail.html', locals())
+        params['message'] = 'Permission Denied'
+        params['reason'] = 'You do not have permission to visit this part of the page.'
+        return render_to_response('fail.html', params)
 
     if request.method == 'POST':
         form = LateForm(request.POST)
@@ -86,23 +93,25 @@ def late_tool(request):
                 chronos.append(pclock)
                 pclock = {}
             students = interpet_results(chronos, date, service)
-            return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
+            params['form'] = form
+            params['students'] = students
+            return render_to_response('late_tool.html', params, context_instance=RequestContext(request))
 
     else:
         form = LateForm()
-    return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
+        params['form'] = form
+    return render_to_response('late_tool.html', params, context_instance=RequestContext(request))
 
 
 def csv_data_former(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
-
+    params = {'request': request,}
     if not request.user.is_staff:
-        message = 'Permission Denied'
-        reason = 'You do not have permission to visit this part of the page.'
-
-        return render_to_response('fail.html', locals())
+        params['message'] = 'Permission Denied'
+        params['reason'] = 'You do not have permission to visit this part of the page.'
+        return render_to_response('fail.html', params)
 
     if request.method == 'POST':
         form = DataForm(request.POST)
@@ -114,7 +123,8 @@ def csv_data_former(request):
             return response
     else:
         form = DataForm()
-    return render_to_response('csv_form.html', locals(), context_instance=RequestContext(request))
+        params['form'] = form
+    return render_to_response('csv_form.html', params, context_instance=RequestContext(request))
 
 
 def csv_data_generator(shifts, year=None, month=None, day=None, end_date=None, start_date=None):
@@ -196,8 +206,10 @@ def get_total_hours(request):
     """This method returns the cumulative hours worked by all employees in the
        range entered by the user in the form.
     """
+    params = {'request': request,}
     if request.method == 'POST':
         form = HourForm(request.POST)
+        params['form'] = form
         if form.is_valid():
             end_date = form.cleaned_data['end_date']
             start_date = form.cleaned_data['start_date']
@@ -219,11 +231,13 @@ def get_total_hours(request):
                     round(total, 2),
                 ]
                 totaler.append(total_per_person)
-
-            return render_to_response('total_hours.html', locals(), context_instance=RequestContext(request))
+            
+            params['totaler'] = totaler
+            return render_to_response('total_hours.html', params, context_instance=RequestContext(request))
     else:
         form = DataForm()
-    return render_to_response('total_hours.html', locals(), context_instance=RequestContext(request))
+        params['form'] = form
+    return render_to_response('total_hours.html', params, context_instance=RequestContext(request))
 
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
@@ -365,11 +379,11 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
     with specific permissions can view this information.
     """
     staff_report_checker = True
+    params = {'request': request,}
     if not request.user.is_staff:
-        message = 'Permission Denied'
-        reason = 'You do not have permission to visit this part of the page.'
-
-        return render_to_response('fail.html', locals())
+        params['message'] = 'Permission Denied'
+        params['reason'] = 'You do not have permission to visit this part of the page.'
+        return render_to_response('fail.html', params)
 
     return specific_report(request, user, year, month, day, week, payperiod, staff_report_checker)
 
@@ -378,10 +392,12 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
 def specific_report(request, user, year, month, day=None, week=None, payperiod=None, staff_report_checker=None):
     """ This view is used when viewing specific shifts in the given day.
     """
+    params = {'request': request,}
     try:
         #Grab shifts
         if user:
             user = User.objects.get(username=user)
+            params['user'] = user
 
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         if day:
@@ -392,10 +408,12 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
         else:
             # This should be a payperiod view
             description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
+            params['description'] = description
     except:
         template = loader.get_template('400.html')
         context = RequestContext(request, {'request':request})
         return HttpResponseBadRequest(template.render(context))
+
     # The following code is used for displaying the user's call_me_by or first
     # name.
     shifts = []
@@ -439,8 +457,9 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
             'shiftoutnote': shift.shiftoutnote,
         }
         shifts.append(data)
+    params['shifts'] = shifts
 
-    return render_to_response('specific_report.html', locals(), context_instance=RequestContext(request))
+    return render_to_response('specific_report.html', params, context_instance=RequestContext(request))
 
 
 @login_required
@@ -448,11 +467,11 @@ def report(request, user=None, year=None, month=None):
     """ Creates a report of shifts in the year and month.
     """
 
+    params = {'request': request,}
     if not request.user.is_staff:
-        message = 'Permission Denied'
-        reason = 'You do not have permission to visit this part of the page.'
-
-        return render_to_response('fail.html', locals())
+        params['message'] = 'Permission Denied'
+        params['reason'] = 'You do not have permission to visit this part of the page.'
+        return render_to_response('fail.html', params)
 
     # Initiate the return argument list
     args = {}
@@ -568,12 +587,14 @@ def personal_report(request, user=None, year=None, month=None):
 def time(request):
     """ Sign in or sign out of a shift.
     """
+    params = {'request': request,}
     # Generate a token to protect from cross-site request forgery
     c = {}
     c.update(csrf(request))
 
     # Grab information we want to pass along no matter what state we're in
     user = request.user
+    params['user'] = user
     # Getting machine location user is currently using
     current_ip = request.META['REMOTE_ADDR']
 
@@ -654,7 +675,10 @@ def time(request):
             user = user.first_name
     except UserProfile.DoesNotExist:
         user = user.first_name
-    return render_to_response('time.html', locals(), context_instance=RequestContext(request))
+    params['form'] = form
+    params['user'] = user
+    params['in_or_out'] = in_or_out
+    return render_to_response('time.html', params, context_instance=RequestContext(request))
 
 
 def fail(request):
@@ -674,7 +698,8 @@ def fail(request):
         log_msg = request.GET['log_msg']
     except:
         pass
-    return render_to_response('fail.html', locals())
+    params = {'request': request, 'message': message, 'reason': reason, 'log_msg': log_msg,}
+    return render_to_response('fail.html', params)
 
 
 def success(request):
@@ -697,4 +722,5 @@ def success(request):
     except UserProfile.DoesNotExist:
         user = user.first_name
 
-    return render_to_response('success.html', locals(), context_instance=RequestContext(request))
+    params = {'request': request, 'success': success, 'at_time': at_time, 'location': location, 'user': user}
+    return render_to_response('success.html', params, context_instance=RequestContext(request))
