@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block pageJS %}
+<script type="text/javascript" src="/static/js/jquery.tablesorter.min.js"></script>
+     <script type="text/javascript">
+        $(function() {
+             $("#report").tablesorter(
+                {
+                    cssAsc: 'headerSortUp',
+                    cssDesc: 'headerSortDown',
+                    cssHeader: 'header',
+                    sortList: [[2,0]],
+                    headers: { 6: { sorter: false}, 7: {sorter: false} },
+                }
+            );
+         });
+     </script>
+{% endblock %}
+
+ {% block content %}
+
+    <h1>Late Table</h1>
+    <h3>Late Tool Data for {{ service }} from {{ start_date_display }} to {{ end_date_display }}</h3>
+    <table id="report" class="regular_table report_results">
+        <thead>
+            <th class="header"><a href="#">Name (NetID)</a></th>
+            <th class="header"><a href="#">Status</a></th>
+            <th class="header"><a href="#">Scheduled</a></th>
+            <th class="header"><a href="#">Actual</a></th>
+            <th class="header"><a href="#">Time Diff</a></th>
+            <th class="header"><a href="#">Note</a></th>
+        </thead>
+        <tbody>
+            {% for each_day in students  %}
+                {% for student in each_day %}
+                <tr>
+                    <td>{{ student.name }} ({{ student.netid }})</td>
+                    <td class="{{ student.color }}">{{ student.status }}</td>
+                    <td>{{ student.date }} ({{ student.sched_in }} - {{ student.sched_out }})</td>
+                    <td>{{ student.date }} ({{ student.clock_in }} - {{ student.clock_out }})</td>
+                    <td>{{ student.change }}</td>
+                    <td>{{ student.comm_in }} <br /> {{ student.comm_out }} </td>
+                </tr>
+                {% endfor %}
+            {% endfor  %}
+        </tbody>
+    </table>
+ {% endblock %}
+

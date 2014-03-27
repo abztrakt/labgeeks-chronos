@@ -47,8 +47,7 @@ def csv_daily_data(request, year, month, day):
 
 @login_required
 def late_tool(request):
-    """ Generates a form for downloading a particular time period
-        shifts in CSV format.
+    """ Generates a form for displaying team members who were late
     """
     if not request.user.is_staff:
         message = 'Permission Denied'
@@ -61,37 +60,80 @@ def late_tool(request):
         if form.is_valid():
             start_date = form.cleaned_data['start_date']
             service = form.cleaned_data['service']
-            end_date = start_date + timedelta(days=1)
-            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 04:00:00"))
-            chronos = []
-            pclock = {}
-            date = start_date.strftime("%Y-%m-%d")
-            for shift in shifts:
-                if shift.outtime is None:
-                    continue
-                if "\n\n" in shift.shiftnote:
-                    shiftnotes = shift.shiftnote.split("\n\n")
-                    shiftinnote = shiftnotes[0]
-                    shiftoutnote = shiftnotes[1]
-                else:
-                    shiftinnote = shift.shiftnote
-                    shiftoutnote = ""
-                pclock["comm_in"] = shiftinnote
-                pclock["netid"] = shift.person.username
-                pclock["name"] = shift.person.first_name + " " + shift.person.last_name
-                pclock["punchclock_in_location"] = shift.in_clock.location.name
-                pclock["shift"] = shift.id
-                pclock["out"] = shift.outtime.strftime("%X")
-                pclock["in"] = shift.intime.strftime("%X")
-                pclock["comm_out"] = shiftoutnote
-                chronos.append(pclock)
-                pclock = {}
-            students = interpet_results(chronos, date, service)
-            return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
+            end_date = form.cleaned_data['end_date']
 
+            if not end_date:
+                end_date = start_date
+
+            return HttpResponseRedirect('latetable?start_date={0}&end_date={1}&service={2}'.format(start_date, end_date, service))
     else:
         form = LateForm()
     return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
+
+
+@login_required
+def late_table(request):
+    """ Displays a table of late students with appropriate status
+    """
+
+    if not request.user.is_staff:
+        message = 'Permission Denied'
+        reason = 'You do not have permission to visit this part of the page.'
+
+        return render_to_response('fail.html', locals())
+
+    start_date = request.GET.get('start_date', '')
+    end_date = request.GET.get('end_date', '')
+    service = request.GET.get('service', '')
+
+    import datetime
+    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+    shift_data = {}
+    students = []
+    dates = []
+
+    for each_day in range(int((end_date - start_date).days)):
+        start = start_date
+        num = each_day + 1
+        end = start_date + timedelta(days=num)
+        shifts_for_day = Shift.objects.filter(intime__gte=start.strftime("%Y-%m-%d %X"), outtime__lte=end.strftime("%Y-%m-%d 04:00:00"))
+        curr_date = start_date + timedelta(days=each_day)
+        dates.append(curr_date)
+        shift_data[curr_date] = shifts_for_day
+
+    for date, shifts in shift_data.items():
+        chronos = []
+        pclock = {}
+        date = date.strftime("%Y-%m-%d")
+        for shift in shifts:
+            if shift.outtime is None:
+                continue
+            if "\n\n" in shift.shiftnote:
+                shiftnotes = shift.shiftnote.split("\n\n")
+                shiftinnote = shiftnotes[0]
+                shiftoutnote = shiftnotes[1]
+            else:
+                shiftinnote = shift.shiftnote
+                shiftoutnote = ""
+            pclock["comm_in"] = shiftinnote
+            pclock["netid"] = shift.person.username
+            pclock["name"] = shift.person.first_name + " " + shift.person.last_name
+            pclock["punchclock_in_location"] = shift.in_clock.location.name
+            pclock["shift"] = shift.id
+            pclock["out"] = shift.outtime.strftime("%X")
+            pclock["in"] = shift.intime.strftime("%X")
+            pclock["comm_out"] = shiftoutnote
+            chronos.append(pclock)
+            pclock = {}
+
+        students.append(interpet_results(chronos, date, service))
+
+    start_date_display = start_date.strftime("%b. %d, %Y")
+    end_date_display = end_date - timedelta(days=1)
+    end_date_display = end_date_display.strftime("%b. %d, %Y")
+
+    return render_to_response('late_table.html', locals(), context_instance=RequestContext(request))
 
 
 def csv_data_former(request):

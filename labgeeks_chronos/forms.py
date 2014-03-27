@@ -10,6 +10,7 @@ class DataForm(forms.Form):
 
 class LateForm(forms.Form):
     start_date = forms.DateField()
+    end_date = forms.DateField(required=False)
     service_choices = tuple(settings.SCHEDMAN_API.keys())
     z = []
     for i in service_choices:
