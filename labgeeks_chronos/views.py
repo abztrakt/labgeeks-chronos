@@ -55,10 +55,9 @@ def csv_daily_data(request, year, month, day):
 def late_tool(request):
     """ Generates a form for displaying team members who were late
     """
-    params = {'request': request,}
     if not request.user.is_staff:
-        params['message'] = 'Permission Denied'
-        params['reason'] = 'You do not have permission to visit this part of the page.'
+        message = 'Permission Denied'
+        reason = 'You do not have permission to visit this part of the page.'
         return render_to_response('fail.html', params)
 
     if request.method == 'POST':
@@ -70,41 +69,11 @@ def late_tool(request):
 
             if not end_date:
                 end_date = start_date
-            end_date = start_date + timedelta(days=1)
-            shifts = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d %X"), outtime__lte=end_date.strftime("%Y-%m-%d 04:00:00"))
-            chronos = []
-            pclock = {}
-            date = start_date.strftime("%Y-%m-%d")
-            for shift in shifts:
-                if shift.outtime is None:
-                    continue
-                if "\n\n" in shift.shiftnote:
-                    shiftnotes = shift.shiftnote.split("\n\n")
-                    shiftinnote = shiftnotes[0]
-                    shiftoutnote = shiftnotes[1]
-                else:
-                    shiftinnote = shift.shiftnote
-                    shiftoutnote = ""
-                pclock["comm_in"] = shiftinnote
-                pclock["netid"] = shift.person.username
-                pclock["name"] = shift.person.first_name + " " + shift.person.last_name
-                pclock["punchclock_in_location"] = shift.in_clock.location.name
-                pclock["shift"] = shift.id
-                pclock["out"] = shift.outtime.strftime("%X")
-                pclock["in"] = shift.intime.strftime("%X")
-                pclock["comm_out"] = shiftoutnote
-                chronos.append(pclock)
-                pclock = {}
-            students = interpet_results(chronos, date, service)
-            params['form'] = form
-            params['students'] = students
-            return render_to_response('late_tool.html', params, context_instance=RequestContext(request))
 
             return HttpResponseRedirect('latetable?start_date={0}&end_date={1}&service={2}'.format(start_date, end_date, service))
     else:
         form = LateForm()
-        params['form'] = form
-    return render_to_response('late_tool.html', params, context_instance=RequestContext(request))
+    return render_to_response('late_tool.html', locals(), context_instance=RequestContext(request))
 
 
 @login_required
