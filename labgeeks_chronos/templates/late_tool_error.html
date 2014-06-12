@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="section">
+    <h3>Error!</h3>
+    <p>{{ employee_name }} ({{netid}})'s shift on {{start_date}} at {{start_time}} does not have a clock in location.</p>
+    <p>To fix this error, locate that shift on the admin page and add a clock in location for {{employee_name}}'s shift.</p>
+    <iframe width="504" height="284" src="//www.youtube.com/embed/oV3MXD7pzkw" frameborder="0" allowfullscreen></iframe>
+</div>
+{% endblock %}

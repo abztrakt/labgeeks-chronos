@@ -61,7 +61,7 @@ def late_tool(request):
         params['message'] = 'Permission Denied'
         params['reason'] = 'You do not have permission to visit this part of the page.'
         return render_to_response('fail.html', params)
-
+    
     if request.method == 'POST':
         form = LateForm(request.POST)
         if form.is_valid():
@@ -85,6 +85,10 @@ def late_tool(request):
                 pclock["comm_in"] = shiftinnote
                 pclock["netid"] = shift.person.username
                 pclock["name"] = shift.person.first_name + " " + shift.person.last_name
+                if shift.in_clock is None:
+                    template = loader.get_template('late_tool_error.html')
+                    context = RequestContext(request, {'request':request, 'start_time':shift.intime.strftime("%X"), 'start_date': start_date, 'netid':pclock["netid"], 'employee_name':pclock["name"]})
+                    return HttpResponseBadRequest(template.render(context))
                 pclock["punchclock_in_location"] = shift.in_clock.location.name
                 pclock["shift"] = shift.id
                 pclock["out"] = shift.outtime.strftime("%X")
@@ -101,6 +105,7 @@ def late_tool(request):
         form = LateForm()
         params['form'] = form
     return render_to_response('late_tool.html', params, context_instance=RequestContext(request))
+        
 
 
 def csv_data_former(request):
