@@ -4,14 +4,7 @@
      <script type="text/javascript">
         $(function() {
              $('#id_start_date').datepicker();
-             $("#report").tablesorter(
-                {
-                    cssAsc: 'headerSortUp',
-                    cssDesc: 'headerSortDown',
-                    cssHeader: 'header',
-                    headers: { 6: { sorter: false}, 7: {sorter: false} },
-                }
-            );
+             $('#id_end_date').datepicker();
          });
      </script>
 {% endblock %}
@@ -20,30 +13,28 @@
     <h1>Late Tool</h1>
     <form action="" method="post">
     {% csrf_token %}
-    {{ form }}
-    <input type="submit" value="Check for late/early employees" />
+    {{ form.non_field_errors }}
+
+        <div>
+            {{ form.start_date.errors }}
+            <label for="id_start_date">Start Date*:&nbsp;&nbsp;</label>
+            {{ form.start_date }}
+        </div>
+
+        <div>
+        {{ form.end_date.errors }}
+        <label for="id_end_date">End Date: &nbsp; &nbsp;</label>
+        {{ form.end_date }}
+        </div>
+
+        <div>
+        {{ form.service.errors }}
+        <label for="id_service">Service:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+        {{ form.service }}
+        </div>
+
+        <input type="submit" value="Check for late/early employees" />
     </form>
-    <table id="report" class="regular_table report_results">
-        <thead>
-            <th class="header"><a href="#">Name (NetID)</a></th>
-            <th class="header"><a href="#">Status</a></th>
-            <th class="header"><a href="#">Scheduled</a></th>
-            <th class="header"><a href="#">Actual</a></th>
-            <th class="header"><a href="#">Time Diff</a></th>
-            <th class="header"><a href="#">Note</a></th>
-        </thead>
-        <tbody>
-            {% for student in students %}
-            <tr>
-                <td>{{ student.name }} ({{ student.netid }})</td>
-                <td class="{{ student.color }}">{{ student.status }}</td>
-                <td>{{ student.sched_in }} - {{ student.sched_out }}</td>
-                <td>{{ student.clock_in }} - {{ student.clock_out }}</td>
-                <td>{{ student.change }}</td>
-                <td>{{ student.comm_in }} <br /> {{ student.comm_out }} </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <i>* fields are required</i>
  {% endblock %}
 
