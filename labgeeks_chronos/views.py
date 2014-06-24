@@ -22,18 +22,19 @@ from collections import defaultdict
 import calendar
 from django.template import RequestContext
 
+
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
     """
 
-    params = {'request': request,}    
+    params = {'request': request}
     return render_to_response('options.html', params, context_instance=RequestContext(request))
 
 
 def monthly_list_shifts(request, user, year, month):
     """ Lists the monthly shifts/timesheets all together for an employee
     """
-    params = {'request': request,}
+    params = {'request': request}
     mname = calendar.month_name[int(month)]
     params['mname'] = mname
     user = User.objects.get(username=user)
@@ -55,6 +56,7 @@ def csv_daily_data(request, year, month, day):
 def late_tool(request):
     """ Generates a form for displaying team members who were late
     """
+    params = {'request': request}
     if not request.user.is_staff:
         message = 'Permission Denied'
         reason = 'You do not have permission to visit this part of the page.'
@@ -149,7 +151,7 @@ def csv_data_former(request):
     """ Generates a form for downloading a particular time period
         shifts in CSV format.
     """
-    params = {'request': request,}
+    params = {'request': request}
     if not request.user.is_staff:
         params['message'] = 'Permission Denied'
         params['reason'] = 'You do not have permission to visit this part of the page.'
@@ -248,7 +250,7 @@ def get_total_hours(request):
     """This method returns the cumulative hours worked by all employees in the
        range entered by the user in the form.
     """
-    params = {'request': request,}
+    params = {'request': request}
     if request.method == 'POST':
         form = HourForm(request.POST)
         params['form'] = form
@@ -273,7 +275,7 @@ def get_total_hours(request):
                     round(total, 2),
                 ]
                 totaler.append(total_per_person)
-            
+
             params['totaler'] = totaler
             return render_to_response('total_hours.html', params, context_instance=RequestContext(request))
     else:
@@ -421,7 +423,7 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
     with specific permissions can view this information.
     """
     staff_report_checker = True
-    params = {'request': request,}
+    params = {'request': request}
     if not request.user.is_staff:
         params['message'] = 'Permission Denied'
         params['reason'] = 'You do not have permission to visit this part of the page.'
@@ -434,7 +436,7 @@ def staff_report(request, year, month, day=None, user=None, week=None, payperiod
 def specific_report(request, user, year, month, day=None, week=None, payperiod=None, staff_report_checker=None):
     """ This view is used when viewing specific shifts in the given day.
     """
-    params = {'request': request,}
+    params = {'request': request}
     try:
         #Grab shifts
         if user:
@@ -453,7 +455,7 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
             params['description'] = description
     except:
         template = loader.get_template('400.html')
-        context = RequestContext(request, {'request':request})
+        context = RequestContext(request, {'request': request})
         return HttpResponseBadRequest(template.render(context))
 
     # The following code is used for displaying the user's call_me_by or first
@@ -509,7 +511,7 @@ def report(request, user=None, year=None, month=None):
     """ Creates a report of shifts in the year and month.
     """
 
-    params = {'request': request,}
+    params = {'request': request}
     if not request.user.is_staff:
         params['message'] = 'Permission Denied'
         params['reason'] = 'You do not have permission to visit this part of the page.'
@@ -629,7 +631,7 @@ def personal_report(request, user=None, year=None, month=None):
 def time(request):
     """ Sign in or sign out of a shift.
     """
-    params = {'request': request,}
+    params = {'request': request}
     # Generate a token to protect from cross-site request forgery
     c = {}
     c.update(csrf(request))
@@ -667,8 +669,10 @@ def time(request):
                     oldshift = Shift.objects.filter(person=request.user, outtime=None)
                     oldshift = oldshift[0]
                 except IndexError:
-                    reason = "Whoa. Something wacky is up. You appear to be signed in at %s, but don't have an open entry in my database. This is kind of a metaphysical crisis for me, I'm no longer sure what it all means." % location
-                    return HttpResponseRedirect("fail/?reason=%s" % reason)
+                    message = "Whoa. Something wacky is up."
+                    reason = "You appear to be signed in at %s, but don't have an open entry in my database. This is kind of a metaphysical crisis for me, I'm no longer sure what it all means." % location
+                    log_msg = "punchparadox"
+                    return HttpResponseRedirect("fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg))
                 oldshift.outtime = datetime.now()
                 oldshift.shiftnote = "IN: %s\n\nOUT: %s" % (oldshift.shiftnote, form.data['shiftnote'])
                 oldshift.out_clock = punchclock
@@ -740,7 +744,7 @@ def fail(request):
         log_msg = request.GET['log_msg']
     except:
         pass
-    params = {'request': request, 'message': message, 'reason': reason, 'log_msg': log_msg,}
+    params = {'request': request, 'message': message, 'reason': reason, 'log_msg': log_msg}
     return render_to_response('fail.html', params)
 
 

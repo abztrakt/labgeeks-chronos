@@ -5,6 +5,6 @@
     <h1>FAIL</h1>
     {% if message %}<p>{{ message }}</p>{% endif %}
     {% if reason %}<p>{{ reason }}</p>{% endif %}
-    {% if log_msg %}<p>{{ log_msg }}</p>{% endif %}
+    {% if log_msg %}<p>{% if log_msg == 'punchparadox' %}You can try fixing this problem by following <a href="/punchparadox/">these steps.</a> {% else %} {{ log_msg }} {% endif %}</p>{% endif %}
 </div>
 {% endblock %}
