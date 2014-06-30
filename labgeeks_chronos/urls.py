@@ -1,7 +1,7 @@
 from django.conf.urls.defaults import *
 
 urlpatterns = patterns('labgeeks_chronos.views',
-                       (r'^report$', 'report'),
+                       (r'^report/?$', 'report'),
                        url(r'^time/$', 'time', name="Time"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)$', 'report', name="Report-Monthly"),
                        url(r'^report/(?P<year>\w+)/(?P<month>\w+)/week/(?P<week>\w+)', 'staff_report', name="Report-Weekly"),
