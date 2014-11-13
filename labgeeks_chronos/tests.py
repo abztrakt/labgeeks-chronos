@@ -123,7 +123,8 @@ class LateTableCase(TestCase):
 
     def setUp(self):
         user1 = User.objects.create_user('user1', 'user1@uw.edu', 'coolestuser')
-        user1.name = 'User 1'
+        user1.first_name = 'User'
+        user1.last_name = '1'
         user1.is_active = True
         user1.is_staff = True
         user.is_superuser = False
