@@ -127,16 +127,17 @@ class LateTableCase(TestCase):
         user1.last_name = '1'
         user1.is_active = True
         user1.is_staff = True
-        user.is_superuser = False
+        user1.is_superuser = False
         user1.save()
-        location = Location.objects.create()
-        location.name = 'Campus'
-        pclock = Punchclock.objects.create(name='ode', location=location, ip_address='0.0.0.0')
+        campus = c_models.Location.objects.create(name='Campus')
+        pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
 
     def test_on_time(self):
         from mock import patch
 
-        shift = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 04, 11, 30, 27), outtime=datetime.datetime(1927, 11, 04, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime(1927, 11, 04, 11, 30, 27), outtime=datetime(1927, 11, 04, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         shift.save()
         date = '1927-11-04'
         service = 'dummy_service'
@@ -153,7 +154,9 @@ class LateTableCase(TestCase):
         from mock import patch
         import datetime
 
-        shift = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         shift.save()
         date = '1927-11-03'
         service = 'dummy_service'
@@ -170,7 +173,10 @@ class LateTableCase(TestCase):
         from mock import patch
         import datetime
 
-        shift = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         shift.save()
         date = '1927-11-03'
         service = 'dummy_service'
@@ -187,11 +193,14 @@ class LateTableCase(TestCase):
         from mock import patch
         import datetime
 
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         # This shift was worked the day before the day being examined--date = '1927-03-11'
-        shift1 = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 02, 18, 49, 20), outtime=datetime.datetime(1927, 11, 02, 22, 21, 25), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        shift1 = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 02, 18, 49, 20), outtime=datetime.datetime(1927, 11, 02, 22, 21, 25), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
 
         # This shift was worked on date being examined--date = '1927-03-11'
-        shift2 = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 09, 12, 41), outtime=datetime.datetime(1927, 11, 03, 14, 02, 06), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        shift2 = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 9, 12, 41), outtime=datetime.datetime(1927, 11, 03, 14, 02, 06), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         shift1.save()
         shift2.save()
         date = '1927-11-03'
@@ -213,7 +222,9 @@ class LateTableCase(TestCase):
         from mock import patch
         import datetime
 
-        shift = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
         shift.save()
         date = '1927-03-11'
         service = 'dummy_service'
@@ -290,14 +301,16 @@ class LateTableCase(TestCase):
         from mock import patch
         import datetime
 
-        shift = Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
 
         shift.save()
         date = '1927-03-11'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
-            msg = c_utils.interpet_results(chronos, date, service)
+            msg = c_utils.interpet_results(date, service)
 
         expected_msg = [{'status': 'Clock Out Late', 'comm_in': u'IN: ', 'color': 'blacker', 'sched_in': '11:30 AM', 'clock_out': '02:46 PM', 'date': '1927-03-11', 'change': datetime.timedelta(0, 97), 'comm_out': u'OUT: ', 'clock_in': '11:30 AM', 'name': u'User 1', 'netid': 'user1', 'sched_out': '02:45 PM'}]
 
