@@ -122,6 +122,9 @@ class LateTableCase(TestCase):
     """
 
     def setUp(self):
+        """
+        Creates a user, campus, and punchclock for tests to be run with.
+        """
         user1 = User.objects.create_user('user1', 'user1@uw.edu', 'coolestuser')
         user1.first_name = 'User'
         user1.last_name = '1'
@@ -133,6 +136,9 @@ class LateTableCase(TestCase):
         pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
 
     def test_on_time(self):
+        """
+        Tests the instance that the student clocks in on time and leaves on time.
+        """
         from mock import patch
 
         user1 = User.objects.get(username='user1')
@@ -151,6 +157,9 @@ class LateTableCase(TestCase):
         shift.delete()
 
     def test_slighlty_early(self):
+        """
+        Tests the instance that the student clocks in slightly early and leaves on time
+        """
         from mock import patch
         import datetime
 
@@ -170,6 +179,9 @@ class LateTableCase(TestCase):
         shift.delete()
 
     def test_slightly_late(self):
+        """
+        Tests the instance that the student clocks out slightly late and clocks in on time.
+        """
         from mock import patch
         import datetime
 
@@ -190,6 +202,9 @@ class LateTableCase(TestCase):
         shift.delete()
 
     def test_similar_shifts(self):
+        """
+        This test does not currently pass becuas there is a bug in the code. In the process of fixing it. Supposed to test the instance that the student has two shifts in a 24 hour time span but only works one of the shifts.
+        """
         from mock import patch
         import datetime
 
@@ -219,6 +234,9 @@ class LateTableCase(TestCase):
         shift2.delete()
 
     def test_no_show(self):
+        """
+        Tests the instance when the student is scheduled to work a shift but does not work it.
+        """
         from mock import patch
         import datetime
 
@@ -237,8 +255,10 @@ class LateTableCase(TestCase):
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
 
-
     def test_another_no_show_case(self):
+        """
+        This test does not currently pass because of a bug in the code that I am working on fixing. Supposed to test when the shifts are more than 23 hours apart from each other but less than 24 hours.
+        """
         from mock import patch
         import datetime
 
@@ -259,6 +279,9 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_show, expected_conflicts))
 
     def test_24th_hour(self):
+        """
+        Tests that time is set to 00:00:00 when time  passed in is 24:00:00. This works but creates a bug.
+        """
         from mock import patch
         import datetime
 
@@ -278,6 +301,9 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_show, expected_conflicts))
 
     def test_out_early(self):
+        """
+        Test the instance when the student clocks in on time and clocks out early.
+        """
         from mock import patch
         import datetime
 
@@ -296,8 +322,10 @@ class LateTableCase(TestCase):
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
 
-
     def test_interpet_results(self):
+        """
+        Tests that the message that is passed back to the temaplate is correct.
+        """
         from mock import patch
         import datetime
 
@@ -317,7 +345,9 @@ class LateTableCase(TestCase):
         self.assertEqual(msg, expected_msg)
 
     def breakDown(self):
+        """
+        destroys all the objects that were created for each test.
+        """
         user1.delete()
         location.delete()
         pclock.delete()
->>>>>>> Adjusted the tests to work with bug fix to late table. Fixing SDEV-538
