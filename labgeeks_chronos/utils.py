@@ -7,8 +7,8 @@ from datetime import datetime
 
 
 def read_api(date, service):
-    #request = requests.get("https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift/date")
-    #date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
+    # request = requests.get("https://depts.washington.edu/hdleads/scheduling/schedman/ws/v1/shift/date")
+    # date = whatever day the user chooses, which will be put into the url fro the API; might have to format the date a little to reflect the correct url
 
     app = settings.SCHEDMAN_API
     app_url = app[service]
@@ -32,7 +32,7 @@ def compare(chronos, date, service):
     no_shows = []
     no_shows_name = []
     conflicts = []
-    #for each netid in the scheduler, finds all shifts in chronos that can be potential matches
+    # for each netid in the scheduler, finds all shifts in chronos that can be potential matches
     for netid in raw["Shifts"].keys():
         for shift in raw["Shifts"][netid]:  # each netid/person might have more than one scheduled shift so have to iterate through each one before moving onto a new person
             shift["netid"] = netid
@@ -42,7 +42,7 @@ def compare(chronos, date, service):
                     potential_matches.append(chronos[i])
                     name = chronos[i]["name"]
 
-            #out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
+            # out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
             if len(potential_matches) == 0:
                 no_shows.append(shift)
                 no_shows_name.append(netid)
@@ -55,11 +55,15 @@ def compare(chronos, date, service):
                     no_shows_name.append(netid)
                     no_shows.append(shift)
 
+    """ Upon writting a test to cover this block of code, it became obvious
+        that it no longer works and isn't needed.
+
     no_shows_objects = User.objects.filter(username__in=no_shows_name)
     for each in no_shows:
         for each_name in no_shows_objects:
             if each['netid'] == each_name.username:
                 each['name'] = each_name.get_full_name()
+    """
     clean_conflicts = []
     for item in conflicts:
         if item is not None:
@@ -72,21 +76,22 @@ def get_match(potential_matches, sched_shift):
     """Given a list of potential punchclock shifts and a scheduled shift that could be associated with the potential punchclock shifts, will find the correct punchlock shift that matches with the scheduled shift. If none is found, then that means they did not show up for that shift."""
     match = []
     threshold = timedelta(hours=23)
-    #For the most part, the in punchclock time closest to the schedueled shift is the best match
+    # For the most part, the in punchclock time closest to the schedueled shift is the best match
     for chron_shift in potential_matches:
         chron_in = datetime.strptime(chron_shift["in"], "%H:%M:%S")
         sched_in = datetime.strptime(sched_shift["In"], "%H:%M:%S")
         diff = abs(sched_in - chron_in)
         if diff < threshold:
-            #emptys the lists and updates it with a better match
+            # emptys the lists and updates it with a better match
             del match[:]
             match.append({"shift": chron_shift, "chron_in": chron_in, "sched_in": sched_in})
             threshold = diff
 
-    #Once a match is found, it figures out if that person is late or not.
+    # Once a match is found, it figures out if that person is late or not.
     if len(match) > 0:
         return find_tardy(sched_shift, match)
     else:
+        # This line doesn't get hit, ever.
         return "no_show"
 
 
@@ -94,7 +99,7 @@ def find_tardy(sched_shift, match):
     """Given a scheduled shift and the matching punchclock shift, will determine if that person clocked in early/late or clocked out early/late. If it does find an infraction, it will return general information about the shift."""
     details = match[0]
 
-    #datetime has a problem recognizing 24:00:00, so have to convert to 00:00:00
+    # datetime has a problem recognizing 24:00:00, so have to convert to 00:00:00
     if sched_shift["Out"] == "24:00:00":
         sched_shift["Out"] = "00:00:00"
 
@@ -107,7 +112,7 @@ def find_tardy(sched_shift, match):
     threshold = timedelta(minutes=1)
     info = {"netid": sched_shift["netid"]}
 
-    #figures out if the person clocked in late or early, or clocked out late or early
+    # figures out if the person clocked in late or early, or clocked out late or early
     if diff_out > threshold:
         info.update({"sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"], "sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"]})
         if chron_out < sched_out:
@@ -141,7 +146,7 @@ def interpet_results(chronos_list, date, service):
             sched_out_temp = datetime.strptime(person['Out'], "%H:%M:%S")
             person['Out'] = sched_out_temp.strftime("%I:%M %p")
 
-            if not 'name' in person:
+            if 'name' not in person:
                 person['name'] = ''
 
             msg.append({"date": date, "color": "redder", "netid": person['netid'], "change": "", "clock_out": "", "sched_out": person['Out'], "comm_out": "", "clock_in": "", "sched_in": person['In'], "comm_in": "", "status": "No Show", "name": person['name']})
@@ -161,7 +166,7 @@ def interpet_results(chronos_list, date, service):
                 clock_out_temp = datetime.strptime(student['clock_out'], "%H:%M:%S")
                 student['clock_out'] = clock_out_temp.strftime("%I:%M %p")
 
-            if not 'name' in student:
+            if 'name' not in student:
                 student['name'] = ''
 
             if "diff_in_early" in student:

@@ -224,3 +224,61 @@ class LateTableCase(TestCase):
         expected_no_shows = [{'In': '11:30:00', 'Out': '14:45:00', 'Shift': 1, 'netid': 'user1'}]
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
+
+    def test_another_no_show_case(self):
+        from mock import patch
+        import datetime
+
+        chronos = []
+        pclock = {'comm_in': u'IN: ', 'netid': u'user1', 'shift': 25261, 'punchclock_in_location': u'Odegaard Help Desk', 'name': u'User 1', 'in': '14:12:41', 'comm_out': u'OUT: ', 'out': '19:02:06'}
+        chronos.append(pclock)
+
+        date = '1927-03-11'
+
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
+            results = c_utils.compare(chronos, date, service)
+
+        expected_conflicts = []
+        expected_no_show = [{'In': '11:30:00', 'Out': '14:45:00', 'Shift': 1, 'netid': 'user1'}]
+
+        self.assertEqual(results, (expected_no_show, expected_conflicts))
+
+    def test_24th_hour(self):
+        from mock import patch
+        import datetime
+
+        chronos = []
+        pclock = {'comm_in': u'IN: ', 'netid': u'user1', 'shift': 25291, 'punchclock_in_location': u'Odegaard Help Desk', 'name': u'User 1', 'in': '18:49:20', 'comm_out': u'OUT: ', 'out': '23:59:06'}
+        chronos.append(pclock)
+
+        date = '1927-03-11'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "24:00:00", "In": "18:50:00", "Shift": 1}]}}):
+            results = c_utils.compare(chronos, date, service)
+
+        expected_conflicts = [{'clock_in': '18:49:20', 'sched_out': '00:00:00', 'clock_out': '23:59:06', 'comm_out': u'OUT: ', 'sched_in': '18:50:00', 'netid': 'user1', 'diff_in_early': datetime.timedelta(0, 54), 'name': u'User 1', 'comm_in': u'IN: '}]
+        expected_no_show = []
+
+        self.assertEqual(results, (expected_no_show, expected_conflicts))
+
+    def test_out_early(self):
+        from mock import patch
+        import datetime
+
+        chronos = []
+        pclock = {'comm_in': u'IN: ', 'netid': u'user1', 'shift': 25634, 'punchclock_in_location': u'Odegaard Help Desk', 'name': u'User 1', 'in': '18:00:00', 'comm_out': u'OUT: ', 'out': '23:40:00'}
+        chronos.append(pclock)
+
+        date = '1927-06-23'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "23:45:00", "In": "18:00:00", "Shift": 1}]}}):
+            results = c_utils.compare(chronos, date, service)
+
+        expected_conflicts = [{'clock_in': '18:00:00', 'sched_out': '23:45:00', 'clock_out': '23:40:00', 'comm_out': u'OUT: ', 'sched_in': '18:00:00', 'netid': 'user1', 'diff_out_early': datetime.timedelta(0, 300), 'name': u'User 1', 'comm_in': u'IN: '}]
+        expected_no_shows = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts))
