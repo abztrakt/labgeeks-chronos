@@ -159,7 +159,7 @@ class LateTableCase(TestCase):
                                'netid': 'user1'}]
 
         self.assertEqual(results, ([], expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_slighlty_early(self):
         """
@@ -193,7 +193,7 @@ class LateTableCase(TestCase):
                                'comm_in': u'IN: '}]
 
         self.assertEquals(results, ([], expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_slightly_late(self):
         """
@@ -227,7 +227,7 @@ class LateTableCase(TestCase):
                                'comm_out': u'OUT: '}]
 
         self.assertEqual(results, ([], expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_similar_shifts(self):
         """
@@ -269,8 +269,8 @@ class LateTableCase(TestCase):
                              'netid': 'user1'}]
 
         self.assertEqual(request, (expected_no_show, expected_conflict))
-        shift1.delete()
-        shift2.delete()
+        del shift1
+        del shift2
 
     def test_no_show(self):
         """
@@ -300,6 +300,7 @@ class LateTableCase(TestCase):
                               'netid': 'user1'}]
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
+        del shift
 
     def test_another_no_show_case(self):
         """
@@ -329,7 +330,7 @@ class LateTableCase(TestCase):
                              'netid': 'user1'}]
 
         self.assertEqual(results, (expected_no_show, expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_24th_hour(self):
         """
@@ -365,7 +366,7 @@ class LateTableCase(TestCase):
         expected_no_show = []
 
         self.assertEqual(results, (expected_no_show, expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_out_early(self):
         """
@@ -400,7 +401,7 @@ class LateTableCase(TestCase):
         expected_no_shows = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
-        shift.delete()
+        del shift
 
     def test_interpet_results(self):
         """
@@ -437,7 +438,7 @@ class LateTableCase(TestCase):
                          'sched_out': '02:45 PM'}]
 
         self.assertEqual(msg, expected_msg)
-        shift.delete()
+        del shift
 
     def breakDown(self):
         """
