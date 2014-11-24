@@ -143,15 +143,20 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime(1927, 11, 04, 11, 30, 27), outtime=datetime(1927, 11, 04, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift.save()
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime(1927, 11, 04, 11, 30, 27),
+                                              outtime=datetime(1927, 11, 04, 14, 45, 37),
+                                              shiftnote='IN: OUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
         date = '1927-11-04'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
             results = c_utils.compare(date, service)
 
-        expected_conflicts = [{'name': u'User 1', 'netid': 'user1'}]
+        expected_conflicts = [{'name': u'User 1',
+                               'netid': 'user1'}]
 
         self.assertEqual(results, ([], expected_conflicts))
         shift.delete()
@@ -165,15 +170,27 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift.save()
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 11, 03, 11, 28, 27),
+                                              outtime=datetime.datetime(1927, 11, 03, 14, 45, 37),
+                                              shiftnote='IN: OUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
             results = c_utils.compare(date, service)
 
-        expected_conflicts = [{'clock_in': '11:28:27', 'sched_out': '14:45:00', 'clock_out': '14:45:37', 'comm_out': u'OUT: ', 'sched_in': '11:30:00', 'netid': 'user1', 'diff_in_early': datetime.timedelta(0, 93), 'name': u'User 1', 'comm_in': u'IN: '}]
+        expected_conflicts = [{'clock_in': '11:28:27',
+                               'sched_out': '14:45:00',
+                               'clock_out': '14:45:37',
+                               'comm_out': u'OUT: ',
+                               'sched_in': '11:30:00',
+                               'netid': 'user1',
+                               'diff_in_early': datetime.timedelta(0, 93),
+                               'name': u'User 1',
+                               'comm_in': u'IN: '}]
 
         self.assertEquals(results, ([], expected_conflicts))
         shift.delete()
@@ -187,16 +204,27 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift.save()
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 11, 03, 11, 30, 00),
+                                              outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
+                                              shiftnote='IN: OUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
             results = c_utils.compare(date, service)
 
-        expected_conflicts = [{'clock_in': '11:30:27', 'sched_in': '11:30:00', 'diff_out_late': datetime.timedelta(0, 97), 'comm_in': u'IN: ', 'clock_out': '14:46:37', 'netid': 'user1', 'name': u'User 1', 'sched_out': '14:45:00', 'comm_out': u'OUT: '}]
+        expected_conflicts = [{'clock_in': '11:30:27',
+                               'sched_in': '11:30:00',
+                               'diff_out_late': datetime.timedelta(0, 97),
+                               'comm_in': u'IN: ',
+                               'clock_out': '14:46:37',
+                               'netid': 'user1',
+                               'name': u'User 1',
+                               'sched_out': '14:45:00',
+                               'comm_out': u'OUT: '}]
 
         self.assertEqual(results, ([], expected_conflicts))
         shift.delete()
@@ -210,14 +238,22 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 28, 27), outtime=datetime.datetime(1927, 11, 03, 14, 45, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+
         # This shift was worked the day before the day being examined--date = '1927-03-11'
-        shift1 = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 02, 18, 49, 20), outtime=datetime.datetime(1927, 11, 02, 22, 21, 25), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
+        shift1 = c_models.Shift.objects.create(person=user1,
+                                               intime=datetime.datetime(1927, 11, 02, 18, 49, 20),
+                                               outtime=datetime.datetime(1927, 11, 02, 22, 21, 25),
+                                               shiftnote='IN: OUT: ',
+                                               in_clock=pclock,
+                                               out_clock=pclock)
 
         # This shift was worked on date being examined--date = '1927-03-11'
-        shift2 = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 9, 12, 41), outtime=datetime.datetime(1927, 11, 03, 14, 02, 06), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift1.save()
-        shift2.save()
+        shift2 = c_models.Shift.objects.create(person=user1,
+                                               intime=datetime.datetime(1927, 11, 03, 9, 12, 41),
+                                               outtime=datetime.datetime(1927, 11, 03, 14, 02, 06),
+                                               shiftnote='IN: OUT: ',
+                                               in_clock=pclock,
+                                               out_clock=pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
@@ -227,7 +263,10 @@ class LateTableCase(TestCase):
 
         expected_conflict = []
 
-        expected_no_show = [{'In': '20:45:00', 'Out': '22:15:00', 'Shift': 1, 'netid': 'user1'}]
+        expected_no_show = [{'In': '20:45:00',
+                             'Out': '22:15:00',
+                             'Shift': 1,
+                             'netid': 'user1'}]
 
         self.assertEqual(request, (expected_no_show, expected_conflict))
         shift1.delete()
@@ -242,8 +281,12 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-        shift.save()
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 11, 03, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
+                                              shiftnote='IN: OUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -251,7 +294,10 @@ class LateTableCase(TestCase):
             results = c_utils.compare(date, service)
 
         expected_conflicts = []
-        expected_no_shows = [{'In': '11:30:00', 'Out': '14:45:00', 'Shift': 1, 'netid': 'user1'}]
+        expected_no_shows = [{'In': '11:30:00',
+                              'Out': '14:45:00',
+                              'Shift': 1,
+                              'netid': 'user1'}]
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts))
 
@@ -331,16 +377,29 @@ class LateTableCase(TestCase):
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1, intime=datetime.datetime(1927, 11, 03, 11, 30, 27), outtime=datetime.datetime(1927, 11, 03, 14, 46, 37), shiftnote='IN: OUT: ', in_clock=pclock, out_clock=pclock)
-
-        shift.save()
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 11, 03, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
+                                              shiftnote='IN: OUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
             msg = c_utils.interpet_results(date, service)
 
-        expected_msg = [{'status': 'Clock Out Late', 'comm_in': u'IN: ', 'color': 'blacker', 'sched_in': '11:30 AM', 'clock_out': '02:46 PM', 'date': '1927-03-11', 'change': datetime.timedelta(0, 97), 'comm_out': u'OUT: ', 'clock_in': '11:30 AM', 'name': u'User 1', 'netid': 'user1', 'sched_out': '02:45 PM'}]
+        expected_msg = [{'status': 'Clock Out Late',
+                         'comm_in': u'IN: ',
+                         'color': 'blacker',
+                         'sched_in': '11:30 AM',
+                         'clock_out': '02:46 PM',
+                         'date': '1927-03-11',
+                         'change': datetime.timedelta(0, 97), 'comm_out': u'OUT: ',
+                         'clock_in': '11:30 AM',
+                         'name': u'User 1',
+                         'netid': 'user1',
+                         'sched_out': '02:45 PM'}]
 
         self.assertEqual(msg, expected_msg)
 
