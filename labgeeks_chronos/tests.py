@@ -274,8 +274,8 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
-                                              outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
+                                              intime=datetime.datetime(1927, 02, 11, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 02, 11, 14, 46, 37),
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
