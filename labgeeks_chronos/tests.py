@@ -306,8 +306,8 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 03, 11, 14, 12, 41),
-                                              outtime=datetime.datetime(1927, 03, 11, 19, 02, 06),
+                                              intime=datetime.datetime(1927, 03, 12, 14, 12, 41),
+                                              outtime=datetime.datetime(1927, 03, 12, 19, 02, 06),
                                               shiftnote='IN: \n\nOUT:',
                                               in_clock=pclock,
                                               out_clock=pclock)
@@ -336,8 +336,8 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 03, 12, 18, 49, 20),
-                                              outtime=datetime.datetime(1927, 03, 12, 23, 59, 06),
+                                              intime=datetime.datetime(1927, 03, 11, 18, 49, 20),
+                                              outtime=datetime.datetime(1927, 03, 11, 23, 59, 06),
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
@@ -402,12 +402,12 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 11, 03, 11, 30, 27),
-                                              outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
+                                              intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
-        date = '1927-11-03'
+        date = '1927-03-11'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
