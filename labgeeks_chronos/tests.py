@@ -161,7 +161,7 @@ class LateTableCase(TestCase):
         self.assertEqual(results, ([], expected_conflicts))
         del shift
 
-    def test_slighlty_early(self):
+    def test_slightly_early(self):
         """
         Tests the instance that the student clocks in slightly early and leaves on time
         """
@@ -216,7 +216,7 @@ class LateTableCase(TestCase):
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
             results = c_utils.compare(date, service)
 
-        expected_conflicts = [{'clock_in': '11:30:27',
+        expected_conflicts = [{'clock_in': '11:30:00',
                                'sched_in': '11:30:00',
                                'diff_out_late': datetime.timedelta(0, 97),
                                'comm_in': u'IN: ',
