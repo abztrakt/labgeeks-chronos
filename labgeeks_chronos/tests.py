@@ -240,24 +240,17 @@ class LateTableCase(TestCase):
         pclock = c_models.Punchclock.objects.get(name='ode')
 
         # This shift was worked the day before the day being examined--date = '1927-03-11'
-        shift1 = c_models.Shift.objects.create(person=user1,
-                                               intime=datetime.datetime(1927, 11, 02, 18, 49, 20),
-                                               outtime=datetime.datetime(1927, 11, 02, 22, 21, 25),
-                                               shiftnote='IN: \n\nOUT: ',
-                                               in_clock=pclock,
-                                               out_clock=pclock)
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 11, 02, 18, 49, 20),
+                                              outtime=datetime.datetime(1927, 11, 02, 22, 21, 25),
+                                              shiftnote='IN: \n\nOUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
 
-        # This shift was worked on date being examined--date = '1927-03-11'
-        shift2 = c_models.Shift.objects.create(person=user1,
-                                               intime=datetime.datetime(1927, 11, 03, 9, 12, 41),
-                                               outtime=datetime.datetime(1927, 11, 03, 14, 02, 06),
-                                               shiftnote='IN: \n\nOUT: ',
-                                               in_clock=pclock,
-                                               out_clock=pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
-        # This shift was supposed to be worked on date being examined
+        # This shift was supposed to be worked on date being examined--'1927-11-03'
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "22:15:00", "In": "20:45:00", "Shift": 1}]}}):
             request = c_utils.compare(date, service)
 
@@ -269,8 +262,7 @@ class LateTableCase(TestCase):
                              'netid': 'user1'}]
 
         self.assertEqual(request, (expected_no_show, expected_conflict))
-        del shift1
-        del shift2
+        del shift
 
     def test_no_show(self):
         """
