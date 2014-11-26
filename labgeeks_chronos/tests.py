@@ -146,7 +146,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime(1927, 11, 04, 11, 30, 27),
                                               outtime=datetime(1927, 11, 04, 14, 45, 37),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-11-04'
@@ -173,7 +173,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 11, 03, 11, 28, 27),
                                               outtime=datetime.datetime(1927, 11, 03, 14, 45, 37),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-11-03'
@@ -207,7 +207,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 11, 03, 11, 30, 00),
                                               outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-11-03'
@@ -243,7 +243,7 @@ class LateTableCase(TestCase):
         shift1 = c_models.Shift.objects.create(person=user1,
                                                intime=datetime.datetime(1927, 11, 02, 18, 49, 20),
                                                outtime=datetime.datetime(1927, 11, 02, 22, 21, 25),
-                                               shiftnote='IN: OUT: ',
+                                               shiftnote='IN: \n\nOUT: ',
                                                in_clock=pclock,
                                                out_clock=pclock)
 
@@ -251,7 +251,7 @@ class LateTableCase(TestCase):
         shift2 = c_models.Shift.objects.create(person=user1,
                                                intime=datetime.datetime(1927, 11, 03, 9, 12, 41),
                                                outtime=datetime.datetime(1927, 11, 03, 14, 02, 06),
-                                               shiftnote='IN: OUT: ',
+                                               shiftnote='IN: \n\nOUT: ',
                                                in_clock=pclock,
                                                out_clock=pclock)
         date = '1927-11-03'
@@ -282,9 +282,9 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 11, 03, 11, 30, 27),
-                                              outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
-                                              shiftnote='IN: OUT: ',
+                                              intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-03-11'
@@ -314,7 +314,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 03, 11, 14, 12, 41),
                                               outtime=datetime.datetime(1927, 03, 11, 19, 02, 06),
-                                              shiftnote='IN: OUT:',
+                                              shiftnote='IN: \n\nOUT:',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-03-11'
@@ -344,7 +344,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 03, 11, 18, 49, 20),
                                               outtime=datetime.datetime(1927, 03, 11, 23, 59, 06),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
 
@@ -380,7 +380,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 06, 23, 18, 00, 00),
                                               outtime=datetime.datetime(1927, 06, 23, 23, 40, 00),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-06-23'
@@ -415,7 +415,7 @@ class LateTableCase(TestCase):
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 11, 03, 11, 30, 27),
                                               outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
-                                              shiftnote='IN: OUT: ',
+                                              shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
         date = '1927-03-11'
