@@ -156,7 +156,9 @@ class LateTableCase(TestCase):
             results = c_utils.compare(date, service)
 
         expected_conflicts = [{'name': u'User 1',
-                               'netid': 'user1'}]
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '}]
 
         self.assertEqual(results, ([], expected_conflicts))
         del shift
@@ -346,15 +348,10 @@ class LateTableCase(TestCase):
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "24:00:00", "In": "18:50:00", "Shift": 1}]}}):
             results = c_utils.compare(date, service)
 
-        expected_conflicts = [{'clock_in': '18:49:20',
-                               'sched_out': '00:00:00',
-                               'clock_out': '23:59:06',
-                               'comm_out': u'OUT: ',
-                               'sched_in': '18:50:00',
+        expected_conflicts = [{'name': u'User 1',
                                'netid': 'user1',
-                               'diff_in_early': datetime.timedelta(0, 54),
-                               'name': u'User 1',
-                               'comm_in': u'IN: '}]
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '}]
         expected_no_show = []
 
         self.assertEqual(results, (expected_no_show, expected_conflicts))
