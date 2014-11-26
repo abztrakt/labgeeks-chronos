@@ -336,8 +336,8 @@ class LateTableCase(TestCase):
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime.datetime(1927, 03, 11, 18, 49, 20),
-                                              outtime=datetime.datetime(1927, 03, 11, 23, 59, 06),
+                                              intime=datetime.datetime(1927, 03, 12, 18, 49, 20),
+                                              outtime=datetime.datetime(1927, 03, 12, 23, 59, 06),
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
@@ -365,7 +365,7 @@ class LateTableCase(TestCase):
         import datetime
 
         user1 = User.objects.get(username='user1')
-        pclock = _models.Punchclock.objects.get(name='ode')
+        pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
                                               intime=datetime.datetime(1927, 06, 23, 18, 00, 00),
                                               outtime=datetime.datetime(1927, 06, 23, 23, 40, 00),
@@ -407,7 +407,7 @@ class LateTableCase(TestCase):
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
-        date = '1927-03-11'
+        date = '1927-11-03'
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
