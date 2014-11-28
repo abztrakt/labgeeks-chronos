@@ -4,6 +4,7 @@ import requests
 from django.conf import settings
 from django.contrib.auth.models import User
 from datetime import datetime
+from labgeeks_chronos.models import Shift
 
 
 def read_api(date, service):
@@ -25,30 +26,45 @@ def read_api(date, service):
     return request.json()
 
 
-def compare(chronos, date, service):
+def compare(date, service):
     """Given a list of shift of punchclocks, returns shifts where people did not show up and shifts where people clock in/out early/late."""
 
     raw = read_api(date, service)
+    start_date = datetime.strptime(date, '%Y-%m-%d')
+    next_date = start_date + timedelta(days=1)
+
+    # TODO: move specific times to settings
+    shifts_on_date = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d 04:00:00"), outtime__lte=next_date.strftime("%Y-%m-%d 03:59:59"))
     no_shows = []
     no_shows_name = []
     conflicts = []
-    # for each netid in the scheduler, finds all shifts in chronos that can be potential matches
+    scheduled_shifts = []
+    date = datetime.strptime(date, '%Y-%m-%d').date()
     for netid in raw["Shifts"].keys():
-        for shift in raw["Shifts"][netid]:  # each netid/person might have more than one scheduled shift so have to iterate through each one before moving onto a new person
-            shift["netid"] = netid
-            potential_matches = []
-            for i in range(len(chronos)):
-                if netid == chronos[i]["netid"]:
-                    potential_matches.append(chronos[i])
-                    name = chronos[i]["name"]
-
+        shift = {}
+        shift["uwnetid"] = netid
+        potential_matches = []
+        for shift_info in raw["Shifts"][netid]:  # each netid/person might have more than one scheduled shift so we have to iterate through each one before moving onto a new person
+            if shift_info.get("In") == "24:00:00":
+                shift["time_in"] = datetime.combine(date + timedelta(days=1), datetime.strptime("00:00:00", "%H:%M:%S").time())
+            else:
+                shift["time_in"] = datetime.combine(date, datetime.strptime(shift_info.get("In"), "%H:%M:%S").time())
+            if shift_info.get("Out") == "24:00:00":
+                shift["time_out"] = datetime.combine(date + timedelta(days=1), datetime.strptime("00:00:00", "%H:%M:%S").time())
+            else:
+                shift["time_out"] = datetime.combine(date, datetime.strptime(shift_info.get("Out"), "%H:%M:%S").time())
+            shift["shift_number"] = shift_info.get("Shift")
+            scheduled_shifts.append(shift)
+            user = User.objects.get(username=netid)
+            potential_matches = shifts_on_date.filter(person=user)
             # out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
-            if len(potential_matches) == 0:
-                no_shows.append(shift)
+            if potential_matches.count() == 0:
+                new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid']}
+                no_shows.append(new_no_show)
                 no_shows_name.append(netid)
             else:
-                conflict = get_match(potential_matches, shift)
-                conflict['name'] = name
+                conflict = get_match(potential_matches, shift)  # This is the shift dict we just created
+                conflict['name'] = user.first_name + " " + user.last_name
                 if conflict != "no show":
                     conflicts.append(conflict)
                 else:
@@ -72,55 +88,59 @@ def compare(chronos, date, service):
     return (no_shows, clean_conflicts)
 
 
-def get_match(potential_matches, sched_shift):
+def get_match(potential_matches, scheduled_shift):
     """Given a list of potential punchclock shifts and a scheduled shift that could be associated with the potential punchclock shifts, will find the correct punchlock shift that matches with the scheduled shift. If none is found, then that means they did not show up for that shift."""
     match = []
     threshold = timedelta(hours=23)
-    # For the most part, the in punchclock time closest to the schedueled shift is the best match
+    # For the most part, the in punchclock time closest to the scheduled shift is the best match
     for chron_shift in potential_matches:
-        chron_in = datetime.strptime(chron_shift["in"], "%H:%M:%S")
-        sched_in = datetime.strptime(sched_shift["In"], "%H:%M:%S")
-        diff = abs(sched_in - chron_in)
+        chron_in = chron_shift.intime
+        scheduled_in_time = scheduled_shift["time_in"]
+        diff = abs(scheduled_in_time - chron_in)
         if diff < threshold:
             # emptys the lists and updates it with a better match
             del match[:]
-            match.append({"shift": chron_shift, "chron_in": chron_in, "sched_in": sched_in})
+            match.append({"shift": chron_shift, "chron_in": chron_in, "sched_in": scheduled_in_time})
             threshold = diff
 
     # Once a match is found, it figures out if that person is late or not.
     if len(match) > 0:
-        return find_tardy(sched_shift, match)
+        return find_tardy(scheduled_shift, match)
     else:
         # This line doesn't get hit, ever.
         return "no_show"
 
 
-def find_tardy(sched_shift, match):
+def find_tardy(scheduled_shift, match):
     """Given a scheduled shift and the matching punchclock shift, will determine if that person clocked in early/late or clocked out early/late. If it does find an infraction, it will return general information about the shift."""
     details = match[0]
-
-    # datetime has a problem recognizing 24:00:00, so have to convert to 00:00:00
-    if sched_shift["Out"] == "24:00:00":
-        sched_shift["Out"] = "00:00:00"
-
-    sched_out = datetime.strptime(sched_shift["Out"], "%H:%M:%S")
-    chron_out = datetime.strptime(details["shift"]["out"], "%H:%M:%S")
+    sched_out = scheduled_shift["time_out"]
+    chron_out = details["shift"].outtime
 
     diff_in = abs(details["chron_in"] - details["sched_in"])
     diff_out = abs(chron_out - sched_out)
-
     threshold = timedelta(minutes=1)
-    info = {"netid": sched_shift["netid"]}
+    shift_in_note = ""
+    shift_out_note = ""
+    shiftnote = details['shift'].shiftnote
+    if '\n\n' in shiftnote:
+        split_notes = shiftnote.split('\n\n')
+        shift_in_note = split_notes[0]
+        shift_out_note = split_notes[1]
+    else:
+        shift_in_note = shiftnote
+
+    info = {'netid': scheduled_shift['uwnetid'], 'comm_in': shift_in_note, 'comm_out': shift_out_note}
 
     # figures out if the person clocked in late or early, or clocked out late or early
     if diff_out > threshold:
-        info.update({"sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"], "sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"]})
+        info.update({"sched_out": datetime.strftime(scheduled_shift["time_out"], '%H:%M:%S'), "clock_out": datetime.strftime(details["shift"].outtime, '%H:%M:%S'), "sched_in": datetime.strftime(scheduled_shift["time_in"], '%H:%M:%S'), "clock_in": datetime.strftime(details["shift"].intime, '%H:%M:%S')})
         if chron_out < sched_out:
             info.update({"diff_out_early": diff_out})
         else:
             info.update({"diff_out_late": diff_out})
     if diff_in > threshold:
-        info.update({"sched_in": sched_shift["In"], "clock_in": details["shift"]["in"], "comm_in": details["shift"]["comm_in"], "sched_out": sched_shift["Out"], "clock_out": details["shift"]["out"], "comm_out": details["shift"]["comm_out"]})
+        info.update({"sched_in": datetime.strftime(scheduled_shift['time_in'], '%H:%M:%S'), "clock_in": datetime.strftime(details["shift"].intime, '%H:%M:%S'), "sched_out": datetime.strftime(scheduled_shift["time_out"], '%H:%M:%S'), "clock_out": datetime.strftime(details["shift"].outtime, '%H:%M:%S')})
         if details["chron_in"] < details["sched_in"]:
             info.update({"diff_in_early": diff_in})
         else:
@@ -129,9 +149,9 @@ def find_tardy(sched_shift, match):
     return info
 
 
-def interpet_results(chronos_list, date, service):
+def interpet_results(date, service):
     """Given alist of shift of punchclocks, converts the late and missed shifts into something readable and writes it to a file."""
-    comp = compare(chronos_list, date, service)
+    comp = compare(date, service)
     no_shows = comp[0]
     tardies = comp[1]
     msg = []
