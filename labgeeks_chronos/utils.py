@@ -71,15 +71,6 @@ def compare(date, service):
                     no_shows_name.append(netid)
                     no_shows.append(shift)
 
-    """ Upon writting a test to cover this block of code, it became obvious
-        that it no longer works and isn't needed.
-
-    no_shows_objects = User.objects.filter(username__in=no_shows_name)
-    for each in no_shows:
-        for each_name in no_shows_objects:
-            if each['netid'] == each_name.username:
-                each['name'] = each_name.get_full_name()
-    """
     clean_conflicts = []
     for item in conflicts:
         if item is not None:

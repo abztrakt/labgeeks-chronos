@@ -111,37 +111,6 @@ def late_table(request):
 
     for date, shifts in shift_data.items():
         date = date.strftime("%Y-%m-%d")
-        """
-        This block of code is no longer needed due to the structural changes that were made in the utils.py
-
-        chronos = []
-        pclock = {}
-        date = date.strftime("%Y-%m-%d")
-        for shift in shifts:
-            if shift.outtime is None:
-                continue
-            if "\n\n" in shift.shiftnote:
-                shiftnotes = shift.shiftnote.split("\n\n")
-                shiftinnote = shiftnotes[0]
-                shiftoutnote = shiftnotes[1]
-            else:
-                shiftinnote = shift.shiftnote
-                shiftoutnote = ""
-            pclock["comm_in"] = shiftinnote
-            pclock["netid"] = shift.person.username
-            pclock["name"] = shift.person.first_name + " " + shift.person.last_name
-            if shift.in_clock is None:
-                template = loader.get_template('late_tool_error.html')
-                context = RequestContext(request, {'request':request, 'start_time':shift.intime.strftime("%X"), 'start_date': start_date, 'netid':pclock["netid"], 'employee_name':pclock["name"]})
-                return HttpResponseBadRequest(template.render(context))
-            pclock["punchclock_in_location"] = shift.in_clock.location.name
-            pclock["shift"] = shift.id
-            pclock["out"] = shift.outtime.strftime("%X")
-            pclock["in"] = shift.intime.strftime("%X")
-            pclock["comm_out"] = shiftoutnote
-            chronos.append(pclock)
-            pclock = {}
-        """
         students.append(interpet_results(date, service))
 
     start_date_display = start_date.strftime("%b. %d, %Y")
