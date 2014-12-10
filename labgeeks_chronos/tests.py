@@ -159,8 +159,10 @@ class LateTableCase(TestCase):
                                'netid': 'user1',
                                'comm_in': u'IN: ',
                                'comm_out': u'OUT: '}]
+        expected_no_shows = []
+        expected_missing_netids = []
 
-        self.assertEqual(results, ([], expected_conflicts))
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_slightly_early(self):
@@ -193,8 +195,10 @@ class LateTableCase(TestCase):
                                'diff_in_early': datetime.timedelta(0, 93),
                                'name': u'User 1',
                                'comm_in': u'IN: '}]
+        expected_no_shows = []
+        expected_missing_netids = []
 
-        self.assertEquals(results, ([], expected_conflicts))
+        self.assertEquals(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_slightly_late(self):
@@ -227,8 +231,10 @@ class LateTableCase(TestCase):
                                'name': u'User 1',
                                'sched_out': '14:45:00',
                                'comm_out': u'OUT: '}]
+        expected_no_shows = []
+        expected_missing_netids = []
 
-        self.assertEqual(results, ([], expected_conflicts))
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_similar_shifts(self):
@@ -262,8 +268,9 @@ class LateTableCase(TestCase):
                              'Out': '22:15:00',
                              'Shift': 1,
                              'netid': 'user1'}]
+        expected_missing_netids = []
 
-        self.assertEqual(request, (expected_no_show, expected_conflict))
+        self.assertEqual(request, (expected_no_show, expected_conflict, expected_missing_netids))
         del shift
 
     def test_no_show(self):
@@ -292,8 +299,9 @@ class LateTableCase(TestCase):
                               'Out': '14:45:00',
                               'Shift': 1,
                               'netid': 'user1'}]
+        expected_missing_netids = []
 
-        self.assertEqual(results, (expected_no_shows, expected_conflicts))
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_another_no_show_case(self):
@@ -322,8 +330,9 @@ class LateTableCase(TestCase):
                              'Out': '14:45:00',
                              'Shift': 1,
                              'netid': 'user1'}]
+        expected_missing_netids = []
 
-        self.assertEqual(results, (expected_no_show, expected_conflicts))
+        self.assertEqual(results, (expected_no_show, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_24th_hour(self):
@@ -353,8 +362,9 @@ class LateTableCase(TestCase):
                                'comm_in': u'IN: ',
                                'comm_out': u'OUT: '}]
         expected_no_show = []
+        expected_missing_netids = []
 
-        self.assertEqual(results, (expected_no_show, expected_conflicts))
+        self.assertEqual(results, (expected_no_show, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_out_early(self):
@@ -388,8 +398,9 @@ class LateTableCase(TestCase):
                                'name': u'User 1',
                                'comm_in': u'IN: '}]
         expected_no_shows = []
+        expected_missing_netids = []
 
-        self.assertEqual(results, (expected_no_shows, expected_conflicts))
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
     def test_interpet_results(self):
