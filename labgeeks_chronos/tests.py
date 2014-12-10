@@ -267,6 +267,7 @@ class LateTableCase(TestCase):
         expected_no_show = [{'In': '20:45:00',
                              'Out': '22:15:00',
                              'Shift': 1,
+                             'name': 'User 1',
                              'netid': 'user1'}]
         expected_missing_netids = []
 
@@ -298,6 +299,7 @@ class LateTableCase(TestCase):
         expected_no_shows = [{'In': '11:30:00',
                               'Out': '14:45:00',
                               'Shift': 1,
+                              'name': 'User 1',
                               'netid': 'user1'}]
         expected_missing_netids = []
 
@@ -329,6 +331,7 @@ class LateTableCase(TestCase):
         expected_no_show = [{'In': '11:30:00',
                              'Out': '14:45:00',
                              'Shift': 1,
+                             'name': 'User 1',
                              'netid': 'user1'}]
         expected_missing_netids = []
 
