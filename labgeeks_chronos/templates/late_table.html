@@ -45,5 +45,16 @@
             {% endfor  %}
         </tbody>
     </table>
+    {% if students_missing_netids|length != 0 %}
+        <div>
+            <h4>Warning:</h4>
+            <p>These netids were not found in the database but were scheduled to work.</p>
+            <ul>
+            {% for netid in students_missing_netids %}
+               <li>{{ netid }}</li>
+            {% endfor %}
+            </ul>
+         </div>
+     {% endif %}
  {% endblock %}
 

@@ -98,7 +98,7 @@ def late_table(request):
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
     shift_data = {}
     students_msg = []
-    students_missing_netids = []
+    students_missing_netids = set()
     dates = []
 
     for each_day in range(int((end_date - start_date).days)):
@@ -114,7 +114,8 @@ def late_table(request):
         date = date.strftime("%Y-%m-%d")
         response = interpet_results(date, service)
         students_msg.append(response[0])
-        students_missing_netids.append(response[1])
+        for netid in response[1]:
+            students_missing_netids.add(netid)
 
     start_date_display = start_date.strftime("%b. %d, %Y")
     end_date_display = end_date - timedelta(days=1)
