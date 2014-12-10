@@ -57,7 +57,11 @@ def compare(date, service):
             scheduled_shifts.append(shift)
             try:
                 user = User.objects.get(username=netid)
-                results = get_conflict_and_no_show(shifts_on_date, user, shift)
+                response = get_conflicts_and_no_shows(shifts_on_date, user, shift)
+                for conflict in response[0]:
+                    conflicts.append(conflict)
+                for no_show in response[1]:
+                    no_shows.append(no_show)
                 """
                 potential_matches = shifts_on_date.filter(person=user)
                 name = user.first_name + " " + user.last_name
@@ -78,21 +82,16 @@ def compare(date, service):
             except (ValueError, User.DoesNotExist):
                 missing_netids.append(netid)
 
-    clean_conflicts = []
-    for item in conflicts:
-        if item is not None:
-            clean_conflicts.append(item)
-
-    return (no_shows, clean_conflicts, missing_netids)
+    return (no_shows, conflicts, missing_netids)
 
 
-def get_conflicts_and_no_show(shifts_on_date, user, shift):
+def get_conflicts_and_no_shows(shifts_on_date, user, shift):
     conflicts = []
     clean_conflicts = []
     no_show = []
     potential_matches = shifts_on_date.filter(person=user)
     name = user.first_name + " " + user.last_name
-    if potantial_matches.count() == 0:
+    if potential_matches.count() == 0:
         new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid'], 'name': name}
         no_show.append(new_no_show)
     else:

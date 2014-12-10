@@ -437,7 +437,7 @@ class LateTableCase(TestCase):
                          'netid': 'user1',
                          'sched_out': '02:45 PM'}]
 
-        self.assertEqual(msg, expected_msg)
+        self.assertEqual(msg, (expected_msg, []))
         del shift
 
     def test_missing_netid(self):

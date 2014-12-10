@@ -31,7 +31,7 @@
             <th class="header"><a href="#">Note</a></th>
         </thead>
         <tbody>
-            {% for each_day in students  %}
+            {% for each_day in students_msg  %}
                 {% for student in each_day %}
                 <tr>
                     <td>{{ student.name }} ({{ student.netid }})</td>
