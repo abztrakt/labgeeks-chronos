@@ -36,9 +36,9 @@ def compare(date, service):
     # TODO: move specific times to settings
     shifts_on_date = Shift.objects.filter(intime__gte=start_date.strftime("%Y-%m-%d 04:00:00"), outtime__lte=next_date.strftime("%Y-%m-%d 03:59:59"))
     no_shows = []
-    no_shows_name = []
     conflicts = []
     scheduled_shifts = []
+    missing_netids = []
     date = datetime.strptime(date, '%Y-%m-%d').date()
     for netid in raw["Shifts"].keys():
         shift = {}
@@ -55,28 +55,59 @@ def compare(date, service):
                 shift["time_out"] = datetime.combine(date, datetime.strptime(shift_info.get("Out"), "%H:%M:%S").time())
             shift["shift_number"] = shift_info.get("Shift")
             scheduled_shifts.append(shift)
-            user = User.objects.get(username=netid)
-            potential_matches = shifts_on_date.filter(person=user)
-            # out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
-            if potential_matches.count() == 0:
-                new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid']}
-                no_shows.append(new_no_show)
-                no_shows_name.append(netid)
-            else:
-                conflict = get_match(potential_matches, shift)  # This is the shift dict we just created
-                conflict['name'] = user.first_name + " " + user.last_name
-                if conflict != "no show":
-                    conflicts.append(conflict)
-                else:
+            try:
+                user = User.objects.get(username=netid)
+                results = get_conflict_and_no_show(shifts_on_date, user, shift)
+                """
+                potential_matches = shifts_on_date.filter(person=user)
+                name = user.first_name + " " + user.last_name
+                # out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
+                if potential_matches.count() == 0:
+                    new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid'], 'name': name}
+                    no_shows.append(new_no_show)
                     no_shows_name.append(netid)
-                    no_shows.append(shift)
+                else:
+                    conflict = get_match(potential_matches, shift)  # This is the shift dict we just created
+                    conflict['name'] = user.first_name + " " + user.last_name
+                    if conflict != "no show":
+                        conflicts.append(conflict)
+                    else:
+                        no_shows_name.append(netid)
+                        no_shows.append(shift)
+                """
+            except (ValueError, User.DoesNotExist):
+                missing_netids.append(netid)
 
     clean_conflicts = []
     for item in conflicts:
         if item is not None:
             clean_conflicts.append(item)
 
-    return (no_shows, clean_conflicts)
+    return (no_shows, clean_conflicts, missing_netids)
+
+
+def get_conflicts_and_no_show(shifts_on_date, user, shift):
+    conflicts = []
+    clean_conflicts = []
+    no_show = []
+    potential_matches = shifts_on_date.filter(person=user)
+    name = user.first_name + " " + user.last_name
+    if potantial_matches.count() == 0:
+        new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid'], 'name': name}
+        no_show.append(new_no_show)
+    else:
+        conflict = get_match(potential_matches, shift)
+        conflict['name'] = name
+        if conflict != "no show":
+            conflicts.append(conflict)
+        else:
+            new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_nuber'], 'netid': shift['uwnetid'], 'name': name}
+            no_show.append(new_no_show)
+    for item in conflicts:
+        if item is not None:
+            clean_conflicts.append(item)
+
+    return (clean_conflicts, no_show)
 
 
 def get_match(potential_matches, scheduled_shift):
@@ -145,6 +176,7 @@ def interpet_results(date, service):
     comp = compare(date, service)
     no_shows = comp[0]
     tardies = comp[1]
+    missing_netids = comp[2]
     msg = []
     threshold = timedelta(minutes=5)
     if len(no_shows) > 0:
@@ -200,4 +232,4 @@ def interpet_results(date, service):
                     msg.append({"date": date, "color": "oranger", "netid": student['netid'], "change": student['diff_out_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Late", "name": student['name']})
                 else:
                     msg.append({"date": date, "color": "blacker", "netid": student['netid'], "change": student['diff_out_late'], "clock_out": student['clock_out'], "sched_out": student['sched_out'], "comm_out": student['comm_out'], "clock_in": student['clock_in'], "sched_in": student['sched_in'], "comm_in": student['comm_in'], "status": "Clock Out Late", "name": student['name']})
-    return msg
+    return (msg, missing_netids)

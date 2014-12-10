@@ -429,6 +429,33 @@ class LateTableCase(TestCase):
         self.assertEqual(msg, expected_msg)
         del shift
 
+    def test_missing_netid(self):
+        """ Tests the case that a user name returned from the api call that has a user who is not in the database.
+        """
+        from mock import patch
+        import datetime
+
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 03, 11, 11, 30, 56),
+                                              outtime=datetime.datetime(1927, 03, 11, 14, 46, 03),
+                                              shiftnote='IN: \n\nOUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
+        date = '1927-03-11'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={'Shifts': {'user_none': [{'Out': '14:45:00', 'In': '11:30:00', 'Shift': 1}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = []
+        expected_no_shows = []
+        expected_missing_netid = ['user_none']
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netid))
+        del shift
+
     def breakDown(self):
         """
         destroys all the objects that were created for each test.
