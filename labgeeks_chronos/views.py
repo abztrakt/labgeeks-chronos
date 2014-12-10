@@ -112,7 +112,7 @@ def late_table(request):
 
     for date, shifts in shift_data.items():
         date = date.strftime("%Y-%m-%d")
-        response = interpet_results(date, service)
+        response = interpret_results(date, service)
         students_msg.append(response[0])
         for netid in response[1]:
             students_missing_netids.add(netid)

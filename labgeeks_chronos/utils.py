@@ -170,7 +170,7 @@ def find_tardy(scheduled_shift, match):
     return info
 
 
-def interpet_results(date, service):
+def interpret_results(date, service):
     """Given alist of shift of punchclocks, converts the late and missed shifts into something readable and writes it to a file."""
     comp = compare(date, service)
     no_shows = comp[0]

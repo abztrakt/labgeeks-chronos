@@ -406,7 +406,7 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
         del shift
 
-    def test_interpet_results(self):
+    def test_interpret_results(self):
         """
         Tests that the message that is passed back to the temaplate is correct.
         """
@@ -425,7 +425,7 @@ class LateTableCase(TestCase):
         service = 'dummy_service'
 
         with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
-            msg = c_utils.interpet_results(date, service)
+            msg = c_utils.interpret_results(date, service)
 
         expected_msg = [{'status': 'Clock Out Late',
                          'comm_in': u'IN: ',
