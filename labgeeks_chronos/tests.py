@@ -470,6 +470,41 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netid))
         del shift
 
+    def test_shiftnote(self):
+        """ Tests when the user deletes the auto filled 'IN: \n\nOUT: ' and putting their own
+        """
+        from mock import patch
+        import datetime
+
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
+                                              shiftnote='I deleted the auto filled stuff and put my own note',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
+        date = '1927-03-11'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "14:45:00", "In": "11:30:00", "Shift": 1}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = [{'clock_in': '11:30:27',
+                               'sched_out': '14:45:00',
+                               'clock_out': '14:46:37',
+                               'comm_out': u'',
+                               'sched_in': '11:30:00',
+                               'netid': 'user1',
+                               'diff_out_late': datetime.timedelta(0, 97),
+                               'name': u'User 1',
+                               'comm_in': u'I deleted the auto filled stuff and put my own note'}]
+        expected_no_shows = []
+        expected_missing_ids = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
+        del shift
+
     def breakDown(self):
         """
         destroys all the objects that were created for each test.
