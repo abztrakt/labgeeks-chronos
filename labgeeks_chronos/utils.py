@@ -50,9 +50,12 @@ def compare(date, service):
             else:
                 shift["time_in"] = datetime.combine(date, datetime.strptime(shift_info.get("In"), "%H:%M:%S").time())
             if shift_info.get("Out") == "24:00:00":
-                shift["time_out"] = datetime.combine(date + timedelta(days=1), datetime.strptime("00:00:00", "%H:%M:%S").time())
+                shift["time_out"] = datetime.combine(next_date, datetime.strptime("00:00:00", "%H:%M:%S").time())
             else:
-                shift["time_out"] = datetime.combine(date, datetime.strptime(shift_info.get("Out"), "%H:%M:%S").time())
+                if shift_info.get("Out") < shift_info.get("In"):
+                    shift["time_out"] = datetime.combine(next_date, datetime.strptime(shift_info.get("Out"), "%H:%M:%S").time())
+                else:
+                    shift["time_out"] = datetime.combine(date, datetime.strptime(shift_info.get("Out"), "%H:%M:%S").time())
             shift["shift_number"] = shift_info.get("Shift")
             scheduled_shifts.append(shift)
             try:
@@ -62,23 +65,6 @@ def compare(date, service):
                     conflicts.append(conflict)
                 for no_show in response[1]:
                     no_shows.append(no_show)
-                """
-                potential_matches = shifts_on_date.filter(person=user)
-                name = user.first_name + " " + user.last_name
-                # out of all the shifts he/she clocked in, finds the punch clock that matches up with the shift in the scheduler
-                if potential_matches.count() == 0:
-                    new_no_show = {'In': datetime.strftime(shift['time_in'], '%H:%M:%S'), 'Out': datetime.strftime(shift['time_out'], '%H:%M:%S'), 'Shift': shift['shift_number'], 'netid': shift['uwnetid'], 'name': name}
-                    no_shows.append(new_no_show)
-                    no_shows_name.append(netid)
-                else:
-                    conflict = get_match(potential_matches, shift)  # This is the shift dict we just created
-                    conflict['name'] = user.first_name + " " + user.last_name
-                    if conflict != "no show":
-                        conflicts.append(conflict)
-                    else:
-                        no_shows_name.append(netid)
-                        no_shows.append(shift)
-                """
             except (ValueError, User.DoesNotExist):
                 missing_netids.append(netid)
 

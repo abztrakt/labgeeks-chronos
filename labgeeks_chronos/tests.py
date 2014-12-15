@@ -163,7 +163,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_slightly_early(self):
         """
@@ -199,7 +199,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEquals(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_slightly_late(self):
         """
@@ -235,7 +235,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_similar_shifts(self):
         """
@@ -272,7 +272,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(request, (expected_no_show, expected_conflict, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_no_show(self):
         """
@@ -304,7 +304,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_another_no_show_case(self):
         """
@@ -336,7 +336,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_show, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_24th_hour(self):
         """
@@ -368,7 +368,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_show, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_out_early(self):
         """
@@ -404,7 +404,7 @@ class LateTableCase(TestCase):
         expected_missing_netids = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netids))
-        del shift
+        shift.delete()
 
     def test_interpret_results(self):
         """
@@ -439,9 +439,10 @@ class LateTableCase(TestCase):
                          'name': u'User 1',
                          'netid': 'user1',
                          'sched_out': '02:45 PM'}]
+        expected_missing_ids = []
 
-        self.assertEqual(msg, (expected_msg, []))
-        del shift
+        self.assertEqual(msg, (expected_msg, expected_missing_ids))
+        shift.delete()
 
     def test_missing_netid(self):
         """ Tests the case that a user name returned from the api call that has a user who is not in the database.
@@ -468,7 +469,7 @@ class LateTableCase(TestCase):
         expected_missing_netid = ['user_none']
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_netid))
-        del shift
+        shift.delete()
 
     def test_shiftnote(self):
         """ Tests when the user deletes the auto filled 'IN: \n\nOUT: ' and putting their own
@@ -503,7 +504,35 @@ class LateTableCase(TestCase):
         expected_missing_ids = []
 
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
-        del shift
+        shift.delete()
+
+    def test_overnight_shift(self):
+        from mock import patch
+        import datetime
+
+        user1 = User.objects.get(username='user1')
+        pclock = c_models.Punchclock.objects.get(name='ode')
+        shift = c_models.Shift.objects.create(person=user1,
+                                              intime=datetime.datetime(1927, 03, 11, 22, 15, 00),
+                                              outtime=datetime.datetime(1927, 03, 12, 2, 15, 00),
+                                              shiftnote='IN: \n\nOUT: ',
+                                              in_clock=pclock,
+                                              out_clock=pclock)
+        date = '1927-03-11'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "02:15:00", "In": "22:15:00", "Shift": 1}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = [{'name': u'User 1',
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '}]
+        expected_no_shows = []
+        expected_missing_ids = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
+        shift.delete()
 
     def breakDown(self):
         """
