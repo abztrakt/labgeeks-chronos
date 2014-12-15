@@ -541,3 +541,22 @@ class LateTableCase(TestCase):
         user1.delete()
         location.delete()
         pclock.delete()
+
+
+class PunchclockTests(TestCase):
+
+    def setUp(self):
+        user2 = User.objects.create_user('user2', 'user2@uw.edu', 'punchclock')
+        user2.first_name = 'User'
+        user2.last_name = '2'
+        user2.is_active = True
+        user2.is_staff = True
+        user2.is_superuser = False
+        user2.save()
+        campus = c_models.Location.objects.create(name='Campus')
+        pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
+
+    def breakDown(slef):
+        user2.delete()
+        location.delete()
+        pclock.delete()
