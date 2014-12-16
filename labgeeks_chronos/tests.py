@@ -556,7 +556,15 @@ class PunchclockTests(TestCase):
         campus = c_models.Location.objects.create(name='Campus')
         pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
 
-    def breakDown(slef):
+    def test_clock_in_everything_correct(self):
+        """
+        Tests time() function for clocking in with everything correct
+        """
+        from mock import patch
+        
+
+
+    def breakDown(self):
         user2.delete()
         location.delete()
         pclock.delete()
