@@ -559,9 +559,15 @@ class PunchclockTests(TestCase):
     def test_clock_in_everything_correct(self):
         """
         Tests time() function for clocking in with everything correct
-        """
-        from mock import patch
+        """        
+        user2 = User.objects.get(username='user2')
+        pclock = c_models.Punchclock.objects.get(name='ode')
         
+        # POST into a /time/ page with appropriate data
+        # Get the Shift object that was created
+        # -- for 1st iteration: have a random string in the created Shift object's shift note,
+        #    and assert if the shift note matches to determine if the Shift object is the one we want
+        # -- for 2nd iteration: use mock library to patch the function that sets the in time of the shift object
 
 
     def breakDown(self):
