@@ -7,7 +7,9 @@ from django.contrib.auth.models import User
 from labgeeks_chronos import models as c_models
 from labgeeks_chronos import views as c_views
 from labgeeks_chronos import utils as c_utils
+from mock import patch
 import unittest
+import datetime
 
 
 class StartTestCase(TestCase):
@@ -139,13 +141,11 @@ class LateTableCase(TestCase):
         """
         Tests the instance that the student clocks in on time and leaves on time.
         """
-        from mock import patch
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime(1927, 11, 04, 11, 30, 27),
-                                              outtime=datetime(1927, 11, 04, 14, 45, 37),
+                                              intime=datetime.datetime(1927, 11, 04, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 11, 04, 14, 45, 37),
                                               shiftnote='IN: \n\nOUT: ',
                                               in_clock=pclock,
                                               out_clock=pclock)
@@ -169,9 +169,6 @@ class LateTableCase(TestCase):
         """
         Tests the instance that the student clocks in slightly early and leaves on time
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -205,9 +202,6 @@ class LateTableCase(TestCase):
         """
         Tests the instance that the student clocks out slightly late and clocks in on time.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -241,9 +235,6 @@ class LateTableCase(TestCase):
         """
         This test does not currently pass becuas there is a bug in the code. In the process of fixing it. Supposed to test the instance that the student has two shifts in a 24 hour time span but only works one of the shifts.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
 
@@ -278,9 +269,6 @@ class LateTableCase(TestCase):
         """
         Tests the instance when the student is scheduled to work a shift but does not work it.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -310,9 +298,6 @@ class LateTableCase(TestCase):
         """
         This test does not currently pass because of a bug in the code that I am working on fixing. Supposed to test when the shifts are more than 23 hours apart from each other but less than 24 hours.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -342,9 +327,6 @@ class LateTableCase(TestCase):
         """
         Tests that time is set to 00:00:00 when time  passed in is 24:00:00. This works but creates a bug.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -374,9 +356,6 @@ class LateTableCase(TestCase):
         """
         Test the instance when the student clocks in on time and clocks out early.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -410,9 +389,6 @@ class LateTableCase(TestCase):
         """
         Tests that the message that is passed back to the temaplate is correct.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -447,9 +423,6 @@ class LateTableCase(TestCase):
     def test_missing_netid(self):
         """ Tests the case that a user name returned from the api call that has a user who is not in the database.
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -474,9 +447,6 @@ class LateTableCase(TestCase):
     def test_shiftnote(self):
         """ Tests when the user deletes the auto filled 'IN: \n\nOUT: ' and putting their own
         """
-        from mock import patch
-        import datetime
-
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
         shift = c_models.Shift.objects.create(person=user1,
@@ -507,8 +477,6 @@ class LateTableCase(TestCase):
         shift.delete()
 
     def test_overnight_shift(self):
-        from mock import patch
-        import datetime
 
         user1 = User.objects.get(username='user1')
         pclock = c_models.Punchclock.objects.get(name='ode')
