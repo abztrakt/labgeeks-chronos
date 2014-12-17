@@ -61,7 +61,7 @@ def late_tool(request):
         message = 'Permission Denied'
         reason = 'You do not have permission to visit this part of the page.'
         return render_to_response('fail.html', params)
-    
+
     if request.method == 'POST':
         form = LateForm(request.POST)
         if form.is_valid():
@@ -97,7 +97,8 @@ def late_table(request):
     start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
     end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
     shift_data = {}
-    students = []
+    students_msg = []
+    students_missing_netids = set()
     dates = []
 
     for each_day in range(int((end_date - start_date).days)):
@@ -110,35 +111,11 @@ def late_table(request):
         shift_data[curr_date] = shifts_for_day
 
     for date, shifts in shift_data.items():
-        chronos = []
-        pclock = {}
         date = date.strftime("%Y-%m-%d")
-        for shift in shifts:
-            if shift.outtime is None:
-                continue
-            if "\n\n" in shift.shiftnote:
-                shiftnotes = shift.shiftnote.split("\n\n")
-                shiftinnote = shiftnotes[0]
-                shiftoutnote = shiftnotes[1]
-            else:
-                shiftinnote = shift.shiftnote
-                shiftoutnote = ""
-            pclock["comm_in"] = shiftinnote
-            pclock["netid"] = shift.person.username
-            pclock["name"] = shift.person.first_name + " " + shift.person.last_name
-            if shift.in_clock is None:
-                template = loader.get_template('late_tool_error.html')
-                context = RequestContext(request, {'request':request, 'start_time':shift.intime.strftime("%X"), 'start_date': start_date, 'netid':pclock["netid"], 'employee_name':pclock["name"]})
-                return HttpResponseBadRequest(template.render(context))
-            pclock["punchclock_in_location"] = shift.in_clock.location.name
-            pclock["shift"] = shift.id
-            pclock["out"] = shift.outtime.strftime("%X")
-            pclock["in"] = shift.intime.strftime("%X")
-            pclock["comm_out"] = shiftoutnote
-            chronos.append(pclock)
-            pclock = {}
-
-        students.append(interpet_results(chronos, date, service))
+        response = interpret_results(date, service)
+        students_msg.append(response[0])
+        for netid in response[1]:
+            students_missing_netids.add(netid)
 
     start_date_display = start_date.strftime("%b. %d, %Y")
     end_date_display = end_date - timedelta(days=1)
@@ -307,7 +284,7 @@ def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
         # grab shifts in 1st week of month)
         first_week = date(int(year), int(month), 1).isocalendar()[1]
 
-        #TODO: fix this hack to get around isocaledar's first week of the year
+        # TODO: fix this hack to get around isocaledar's first week of the year
         # wierdness. See #98
         if first_week == 52 and int(month) == 1:
             first_week = 1
@@ -340,7 +317,7 @@ def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
         else:
             shifts = payperiod_shifts['second']
 
-    #Return the correct shifts
+    # Return the correct shifts
     return shifts
 
 
@@ -352,7 +329,7 @@ def calc_shift_stats(shifts, year, month):
     weekly = {}
     first_week = date(year, month, 1).isocalendar()[1]
 
-    #TODO: fix this hack around isocalendars calculating first week of the
+    # TODO: fix this hack around isocalendars calculating first week of the
     # year, see #98
     if first_week == 52 and month == 1:
         first_week = 1
@@ -367,17 +344,17 @@ def calc_shift_stats(shifts, year, month):
             shift_date = shift.intime
             length = float(shift.length())
 
-            #Keep track of pay period totals
+            # Keep track of pay period totals
             if shift_date.day <= 15:
-                #1st pay period
+                # 1st pay period
                 payperiod_totals['first'] += length
             else:
-                #2nd pay period
+                # 2nd pay period
                 payperiod_totals['second'] += length
 
             weekly[week_number] += length
 
-    #Sort the weekly totals
+    # Sort the weekly totals
     weeks = weekly.keys()
     weeks.sort()
     weekly_totals = []
@@ -397,17 +374,17 @@ def prev_and_next_dates(year, month):
     """ This method returns a previous and upcomming months from a given month
     and year.
     """
-    #Figure out the prev and next months
+    # Figure out the prev and next months
     if month == 1:
-        #Its January
+        # Its January
         prev_date = date(year - 1, 12, 1)
         next_date = date(year, 2, 1)
     elif month == 12:
-        #Its December
+        # Its December
         prev_date = date(year, 11, 1)
         next_date = date(year + 1, 1, 1)
     else:
-        #Its a regular month
+        # Its a regular month
         prev_date = date(year, month - 1, 1)
         next_date = date(year, month + 1, 1)
 
@@ -438,7 +415,7 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
     """
     params = {'request': request}
     try:
-        #Grab shifts
+        # Grab shifts
         if user:
             user = User.objects.get(username=user)
             params['user'] = user
@@ -576,7 +553,7 @@ def personal_report(request, user=None, year=None, month=None):
     year = int(year)
     month = int(month)
     if request.user.is_authenticated():
-        #Grab user's shifts
+        # Grab user's shifts
         shifts = get_shifts(year, month, None, user)
         calendar = mark_safe(TimesheetCalendar(shifts, user=user).formatmonth(year, month))
     else:
@@ -603,7 +580,7 @@ def personal_report(request, user=None, year=None, month=None):
     prev_date = prev_and_next['prev_date']
     next_date = prev_and_next['next_date']
 
-    #Compute shift stats
+    # Compute shift stats
     stats = calc_shift_stats(shifts, year, month)
     payperiod_totals = stats['payperiod_totals']
     weekly_totals = stats['weekly_totals']
@@ -656,14 +633,14 @@ def time(request):
     # Check for POST, if not blank form, if true 'take in data'
     if request.method == 'POST':
         form = ShiftForm(request.POST)
-        #Check form data for validity, if not valid, fail gracefully
+        # Check form data for validity, if not valid, fail gracefully
         if form.is_valid():
             # We are creating a shift object that we can manipulate
             # programatically later
             this_shift = form.save(commit=False)
             this_shift.person = request.user
 
-            #Check whether user has open shift at this location
+            # Check whether user has open shift at this location
             if this_shift.person in location.active_users.all():
                 try:
                     oldshift = Shift.objects.filter(person=request.user, outtime=None)
@@ -682,10 +659,10 @@ def time(request):
                 # page
                 success = "OUT"
                 at_time = oldshift.outtime
-                #get rid of zeros on the hour
+                # get rid of zeros on the hour
                 at_time = at_time.strftime('%Y-%m-%d, %I:%M %p').replace(' 0', ' ')
             else:
-                #if shift.person  location.active_staff
+                # if shift.person  location.active_staff
                 if this_shift.intime is None:
                     this_shift.intime = datetime.now()
                 this_shift.in_clock = punchclock
@@ -694,16 +671,16 @@ def time(request):
                 # After successful shift save, add person to active_staff in
                 # appropriate Location
                 location.active_users.add(this_shift.person)
-                #Setting the success variable that users will see on the
+                # Setting the success variable that users will see on the
                 # success page
                 success = "IN"
                 at_time = this_shift.intime
-                #get rid of zeros on the hour
+                # get rid of zeros on the hour
                 at_time = at_time.strftime('%Y-%m-%d, %I:%M %p').replace(' 0', ' ')
 
             return HttpResponseRedirect("success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, this_shift.person))
 
-    #If POST is false, then return a new fresh form.
+    # If POST is false, then return a new fresh form.
     else:
         form = ShiftForm()
         in_or_out = 'IN'
