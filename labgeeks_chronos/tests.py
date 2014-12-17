@@ -1,6 +1,8 @@
 """ Begin testing for Chronos, import proper libraries and models.
 """
 from django.test import TestCase
+from django.test.client import RequestFactory
+from django.test import Client
 from datetime import datetime
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
@@ -562,8 +564,23 @@ class PunchclockTests(TestCase):
         """        
         user2 = User.objects.get(username='user2')
         pclock = c_models.Punchclock.objects.get(name='ode')
-        
+     
+        client = Client()
+        response = client.post('chronos/time', {'USER':'user2', 'REMOTE_ADDR':'0,0,0,0'})
+    
+
+   
         # POST into a /time/ page with appropriate data
+#        rf = RequestFactory()
+ #       request_post = rf.post('/chronos/time')
+  #      request_post.user = user2
+   #     request_post.META['REMOTE_ADDR'] = '0.0.0.0'
+
+    #    response = c_views.time(request_post)
+
+        import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+
+        self.assertEqual(response.status_code, 200)
         # Get the Shift object that was created
         # -- for 1st iteration: have a random string in the created Shift object's shift note,
         #    and assert if the shift note matches to determine if the Shift object is the one we want
