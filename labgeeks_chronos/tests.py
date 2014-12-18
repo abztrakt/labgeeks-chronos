@@ -9,7 +9,9 @@ from django.contrib.auth.models import User
 from labgeeks_chronos import models as c_models
 from labgeeks_chronos import views as c_views
 from labgeeks_chronos import utils as c_utils
+from labgeeks_chronos import forms as c_forms
 import unittest
+import string, random
 
 
 class StartTestCase(TestCase):
@@ -560,27 +562,31 @@ class PunchclockTests(TestCase):
 
     def test_clock_in_everything_correct(self):
         """
-        Tests time() function for clocking in with everything correct
-        """        
+        Tests time() function for clocking in with everything correct -- Method = POST
+        """             
+        # Get the user created in setUp()
         user2 = User.objects.get(username='user2')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-     
+
+        # Make up a random string with 10 characters
+        length = 10 
+        shift_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
         client = Client()
-        response = client.post('chronos/time', {'USER':'user2', 'REMOTE_ADDR':'0,0,0,0'})
-    
-
-   
-        # POST into a /time/ page with appropriate data
-#        rf = RequestFactory()
- #       request_post = rf.post('/chronos/time')
-  #      request_post.user = user2
-   #     request_post.META['REMOTE_ADDR'] = '0.0.0.0'
-
-    #    response = c_views.time(request_post)
-
+        client.login(username='user2', password='punchclock')
+       
+        # Post into /chronos/time to call time()
+        # In this way, request.POST will be QueryDict: {u'shiftnote': [u'Your_random_str']}>, with which time() will use to create ShiftForm
+        response = client.post('/chronos/time/',  {'shiftnote' : shift_note_random}, REMOTE_ADDR='0.0.0.0')
+        # HTTP 302 due to URL redirection
+        self.assertEqual(response.status_code, 302)
+        # Returning a QuerySet
+        shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
+        # We want the Shift object
+        shift_created = shift_created[0]
         import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+        self.assertEqual(shift_created.shiftnote, shift_note_random)
 
-        self.assertEqual(response.status_code, 200)
         # Get the Shift object that was created
         # -- for 1st iteration: have a random string in the created Shift object's shift note,
         #    and assert if the shift note matches to determine if the Shift object is the one we want
