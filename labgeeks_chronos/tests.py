@@ -578,12 +578,10 @@ class PunchclockTests(TestCase):
         client.login(username='user2', password='punchclock')
        
         # Patch the output of datetime.now() so that we can assert the redirect url
-        import pdb
 
         target = datetime.datetime(1927, 10, 15, 3, 45)
         with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
-            pdb.Pdb(skip=['django.*']).set_trace()
            
         # HTTP 302 due to URL redirection
         self.assertEqual(response.status_code, 302)
