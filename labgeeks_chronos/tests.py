@@ -575,16 +575,25 @@ class PunchclockTests(TestCase):
         client = Client()
         client.login(username='user2', password='punchclock')
        
-        # Post into /chronos/time to call time()
-        # In this way, request.POST will be QueryDict: {u'shiftnote': [u'Your_random_str']}>, with which time() will use to create ShiftForm
-        response = client.post('/chronos/time/',  {'shiftnote' : shift_note_random}, REMOTE_ADDR='0.0.0.0')
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        from mock import patch
+        from mock import Mock
+        import datetime
+    
+        target = datetime.datetime(1927, 10, 15, 12, 23, 32)
+        with patch.object(datetime, 'datetime', Mock(wraps=datetime.datetime)) as patched:
+            patched.now.return_value = target
+            # Post into /chronos/time to call time()
+            # In this way, request.POST will be QueryDict: {u'shiftnote': [u'Your_random_str']}>, with which time() will use to create ShiftForm
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_note_random}, REMOTE_ADDR='0.0.0.0')
+            
         # HTTP 302 due to URL redirection
         self.assertEqual(response.status_code, 302)
         # Returning a QuerySet
         shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
         # We want the Shift object
         shift_created = shift_created[0]
-        import pdb; pdb.Pdb(skip=['django.*']).set_trace()
+        pdb.Pdb(skip=['django.*']).set_trace()
         self.assertEqual(shift_created.shiftnote, shift_note_random)
 
         # Get the Shift object that was created
@@ -597,3 +606,30 @@ class PunchclockTests(TestCase):
         user2.delete()
         location.delete()
         pclock.delete()
+
+
+    # mock_dt.py
+    import datetime
+    import mock
+
+    real_datetime_class = datetime.datetime
+
+    def mock_datetime_now(target, dt):
+        class DatetimeSubclassMeta(type):
+            @classmethod
+            def __instancecheck__(mcs, obj):
+                return isinstance(obj, real_datetime_class)
+
+        class BaseMockedDatetime(real_datetime_class):
+            @classmethod
+            def now(cls, tz=None):
+                return target.replace(tzinfo=tz)
+
+            @classmethod
+            def utcnow(cls):
+                return target
+
+        # Python2 & Python3 compatible metaclass
+        MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
+
+        return mock.patch.object(dt, 'datetime', MockedDatetime)
