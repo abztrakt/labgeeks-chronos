@@ -478,6 +478,34 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
         shift.delete()
 
+    def test_no_show_and_conflict(self):
+        """ Tests when the user is scheduled for two shifts in one day but only works one of the shifts.
+        """
+        shift = c_models.Shift.objects.create(person=self.user1,
+                                              intime=datetime.datetime(1927, 12, 19, 9, 30, 35),
+                                              outtime=datetime.datetime(1927, 12, 19, 11, 30, 20),
+                                              shiftnote='IN: \n\nOUT: ',
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
+        date = '1927-12-19'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "11:30:00", "In": "09:30:00", "Shift": 1}, {"Out": "18:00:00", "In": "15:00:00", "Shift": 2}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = [{'name': u'User 1',
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT '}]
+        expected_no_shows = [{'In': '15:00:00',
+                              'Out': '18:00:00',
+                              'Shift': 2,
+                              'name': 'User 1',
+                              'netid': 'user1'}]
+        expected_missing_ids = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
+
     def tearDown(self):
         """
         destroys all the objects that were created for each test.
