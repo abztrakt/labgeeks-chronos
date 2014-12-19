@@ -16,6 +16,32 @@ import string, random
 import datetime
 
 
+# Mock the datetime class
+
+real_datetime_class = datetime.datetime
+
+def mock_datetime_now(target, dt):
+    import mock
+    class DatetimeSubclassMeta(type):
+        @classmethod
+        def __instancecheck__(mcs, obj):
+            return isinstance(obj, real_datetime_class)
+
+    class BaseMockedDatetime(real_datetime_class):
+        @classmethod
+        def now(cls, tz=None):
+            return target.replace(tzinfo=tz)
+
+        @classmethod
+        def utcnow(cls):
+            return target
+        
+    # Python2 & Python3 compatible metaclass
+    MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
+        
+    return mock.patch.object(dt, 'datetime', MockedDatetime)
+
+
 class StartTestCase(TestCase):
     """ Create models for the test cases. Make sure all test cases inherit from
     this class so that they have models. Feel free to add or edit models.
@@ -106,7 +132,7 @@ class ShiftsTestCase(StartTestCase):
     def setUp(self):
         super(ShiftsTestCase, self).setUp()
         person = self.ryu
-        intime = datetime(2011, 1, 1, 8, 0)
+        intime = datetime.datetime(2011, 1, 1, 8, 0)
         shift = c_models.Shift(person=person, intime=intime)
         shift.save()
 
@@ -553,17 +579,10 @@ class PunchclockTests(TestCase):
         client.login(username='user2', password='punchclock')
        
         # Patch the output of datetime.now() so that we can assert the redirect url
-        import datetime
         import pdb
-        from mock import patch
 
-        """
-        target = datetime(1927, 10, 15, 3, 45)
-        with patch.object(datetime, 'now', return_value=target):
-            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
-        """
         target = datetime.datetime(1927, 10, 15, 3, 45)
-        with self.mock_datetime_now(target, datetime):
+        with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
             pdb.Pdb(skip=['django.*']).set_trace()
            
@@ -601,13 +620,13 @@ class PunchclockTests(TestCase):
 
         # clock in
         target = datetime.datetime(1927, 10, 15, 3, 45)
-        with self.mock_datetime_now(target, datetime):
+        with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
             pdb.Pdb(skip=['django.*']).set_trace()
 
         # clock out
         target = datetime.datetime(1927, 10, 15, 5, 45)
-        with self.mock_datetime_now(target, datetime):
+        with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
             pdb.Pdb(skip=['django.*']).set_trace()
 
@@ -624,32 +643,6 @@ class PunchclockTests(TestCase):
         location = 'Campus'
         person = 'user2'
         self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
-
-
-    # Mock the datetime class
-    import datetime
-    real_datetime_class = datetime.datetime
-
-    def mock_datetime_now(self, target, dt):
-        import mock
-        class DatetimeSubclassMeta(type):
-            @classmethod
-            def __instancecheck__(mcs, obj):
-                return isinstance(obj, self.real_datetime_class)
-
-        class BaseMockedDatetime(self.real_datetime_class):
-            @classmethod
-            def now(cls, tz=None):
-                return target.replace(tzinfo=tz)
-
-            @classmethod
-            def utcnow(cls):
-                return target
-
-        # Python2 & Python3 compatible metaclass
-        MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
-
-        return mock.patch.object(dt, 'datetime', MockedDatetime)
 
     def breakDown(self):
         user2.delete()
