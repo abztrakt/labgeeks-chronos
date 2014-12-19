@@ -589,7 +589,6 @@ class PunchclockTests(TestCase):
         shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
         # We want the Shift object
         shift_created = shift_created[0]
-        # pdb.Pdb(skip=['django.*']).set_trace()
         self.assertEqual(shift_created.shiftnote, shift_in_note_random)
 
         success = 'IN'
@@ -613,26 +612,22 @@ class PunchclockTests(TestCase):
 
         # Patch the output of datetime.now() so that we can assert the redirect url
         import datetime
-        import pdb
 
         # clock in
         target = datetime.datetime(1927, 10, 15, 3, 45)
         with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
-            pdb.Pdb(skip=['django.*']).set_trace()
 
         # clock out
         target = datetime.datetime(1927, 10, 15, 5, 45)
         with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
-            pdb.Pdb(skip=['django.*']).set_trace()
 
         # Get the shift obejct again, see if it has the expected note
         shift_created = c_models.Shift.objects.filter(person=user2)
         shift_created = shift_created[0]
         expected_note = "IN: %s\n\nOUT: %s" % (shift_in_note_random, shift_out_note_random)
         # We want the Shift object        
-        # pdb.Pdb(skip=['django.*']).set_trace()
         self.assertEqual(shift_created.shiftnote, expected_note)
 
         success = 'OUT'
