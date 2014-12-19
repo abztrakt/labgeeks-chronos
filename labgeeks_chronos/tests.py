@@ -559,68 +559,114 @@ class PunchclockTests(TestCase):
         user2.save()
         campus = c_models.Location.objects.create(name='Campus')
         pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
+        
 
     def test_clock_in_everything_correct(self):
         """
         Tests time() function for clocking in with everything correct -- Method = POST
         """             
+        # Get the Shift object that was created
+        # -- for 1st iteration: have a random string in the created Shift object's shift note,
+        #    and assert if the shift note matches to determine if the Shift object is the one we want
+        # -- for 2nd iteration: use mock library to patch the function that sets the in time of the shift object
+
         # Get the user created in setUp()
         user2 = User.objects.get(username='user2')
 
         # Make up a random string with 10 characters
         length = 10 
-        shift_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
 
         # Use test client. First login
         client = Client()
         client.login(username='user2', password='punchclock')
        
         # Patch the output of datetime.now() so that we can assert the redirect url
-        from mock import patch
-        from mock import Mock
         import datetime
-    
-        target = datetime.datetime(1927, 10, 15, 12, 23, 32)
-        with patch.object(datetime, 'datetime', Mock(wraps=datetime.datetime)) as patched:
-            patched.now.return_value = target
-            # Post into /chronos/time to call time()
-            # In this way, request.POST will be QueryDict: {u'shiftnote': [u'Your_random_str']}>, with which time() will use to create ShiftForm
-            response = client.post('/chronos/time/',  {'shiftnote' : shift_note_random}, REMOTE_ADDR='0.0.0.0')
-            
+        import pdb
+        from mock import patch
+
+        """
+        target = datetime(1927, 10, 15, 3, 45)
+        with patch.object(datetime, 'now', return_value=target):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+        """
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with self.mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+            pdb.Pdb(skip=['django.*']).set_trace()
+           
         # HTTP 302 due to URL redirection
         self.assertEqual(response.status_code, 302)
         # Returning a QuerySet
         shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
         # We want the Shift object
         shift_created = shift_created[0]
-        pdb.Pdb(skip=['django.*']).set_trace()
-        self.assertEqual(shift_created.shiftnote, shift_note_random)
+        # pdb.Pdb(skip=['django.*']).set_trace()
+        self.assertEqual(shift_created.shiftnote, shift_in_note_random)
 
-        # Get the Shift object that was created
-        # -- for 1st iteration: have a random string in the created Shift object's shift note,
-        #    and assert if the shift note matches to determine if the Shift object is the one we want
-        # -- for 2nd iteration: use mock library to patch the function that sets the in time of the shift object
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
+
+    def test_clock_out_everything_correct(self):
+
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # Make up a random string with 10 characters
+        length = 10 
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+        shift_out_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        import datetime
+        import pdb
+
+        # clock in
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with self.mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+            pdb.Pdb(skip=['django.*']).set_trace()
+
+        # clock out
+        target = datetime.datetime(1927, 10, 15, 5, 45)
+        with self.mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
+            pdb.Pdb(skip=['django.*']).set_trace()
+
+        # Get the shift obejct again, see if it has the expected note
+        shift_created = c_models.Shift.objects.filter(person=user2)
+        shift_created = shift_created[0]
+        expected_note = "IN: %s\n\nOUT: %s" % (shift_in_note_random, shift_out_note_random)
+        # We want the Shift object        
+        # pdb.Pdb(skip=['django.*']).set_trace()
+        self.assertEqual(shift_created.shiftnote, expected_note)
+
+        success = 'OUT'
+        at_time = '1927-10-15,%205:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
 
 
-    def breakDown(self):
-        user2.delete()
-        location.delete()
-        pclock.delete()
-
-
-    # mock_dt.py
+    # Mock the datetime class
     import datetime
-    import mock
-
     real_datetime_class = datetime.datetime
 
-    def mock_datetime_now(target, dt):
+    def mock_datetime_now(self, target, dt):
+        import mock
         class DatetimeSubclassMeta(type):
             @classmethod
             def __instancecheck__(mcs, obj):
-                return isinstance(obj, real_datetime_class)
+                return isinstance(obj, self.real_datetime_class)
 
-        class BaseMockedDatetime(real_datetime_class):
+        class BaseMockedDatetime(self.real_datetime_class):
             @classmethod
             def now(cls, tz=None):
                 return target.replace(tzinfo=tz)
@@ -633,3 +679,8 @@ class PunchclockTests(TestCase):
         MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
 
         return mock.patch.object(dt, 'datetime', MockedDatetime)
+
+    def breakDown(self):
+        user2.delete()
+        location.delete()
+        pclock.delete()
