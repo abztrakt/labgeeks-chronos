@@ -108,7 +108,7 @@ def late_table(request):
         shift_data[curr_date] = shifts_for_day
 
     for date, shifts in shift_data.items():
-        date = date.strftime("%Y-%m-%d")
+        date = datetime.date.strftime("%Y-%m-%d")
         response = interpret_results(date, service)
         students_msg.append(response[0])
         for netid in response[1]:
@@ -324,7 +324,7 @@ def calc_shift_stats(shifts, year, month):
     """
     payperiod_totals = {'first': 0, 'second': 0}
     weekly = {}
-    first_week = date(year, month, 1).isocalendar()[1]
+    first_week = datetime.date(year, month, 1).isocalendar()[1]
 
     # TODO: fix this hack around isocalendars calculating first week of the
     # year, see #98
@@ -374,16 +374,16 @@ def prev_and_next_dates(year, month):
     # Figure out the prev and next months
     if month == 1:
         # Its January
-        prev_date = date(year - 1, 12, 1)
-        next_date = date(year, 2, 1)
+        prev_date = datetime.date(year - 1, 12, 1)
+        next_date = datetime.date(year, 2, 1)
     elif month == 12:
         # Its December
-        prev_date = date(year, 11, 1)
-        next_date = date(year + 1, 1, 1)
+        prev_date = datetime.date(year, 11, 1)
+        next_date = datetime.date(year + 1, 1, 1)
     else:
         # Its a regular month
-        prev_date = date(year, month - 1, 1)
-        next_date = date(year, month + 1, 1)
+        prev_date = datetime.date(year, month - 1, 1)
+        next_date = datetime.date(year, month + 1, 1)
 
     result = {'prev_date': prev_date, 'next_date': next_date}
     return result
@@ -419,13 +419,13 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
 
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         if day:
-            description = "Viewing shifts for %s." % (date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
+            description = "Viewing shifts for %s." % (datetime.date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         elif week:
-            description = "Viewing shifts in week %d of %s." % (int(week), date(int(year), int(month), 1).strftime("%B, %Y"))
+            description = "Viewing shifts in week %d of %s." % (int(week), datetime.date(int(year), int(month), 1).strftime("%B, %Y"))
         else:
             # This should be a payperiod view
-            description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
+            description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), datetime.date(int(year), int(month), 1).strftime("%B, %Y"))
             params['description'] = description
     except:
         template = loader.get_template('400.html')
@@ -496,9 +496,9 @@ def report(request, user=None, year=None, month=None):
 
     # Grab shifts
     if not year:
-        year = date.today().year
+        year = datetime.date.today().year
     if not month:
-        month = date.today().month
+        month = datetime.date.today().month
     year = int(year)
     month = int(month)
     shifts = get_shifts(year, month, None, user)
@@ -521,8 +521,8 @@ def report(request, user=None, year=None, month=None):
         'prev_date': prev_date,
         'next_date': next_date,
         'weeks': weeks,
-        'today_year': date.today().year,
-        'today_month': date.today().month,
+        'today_year': datetime.date.today().year,
+        'today_month': datetime.date.today().month,
     }
 
     return render_to_response('report.html', args, context_instance=RequestContext(request))
@@ -543,9 +543,9 @@ def personal_report(request, user=None, year=None, month=None):
     # If the year and month are not given, assume it is the current year &
     # month.
     if not year:
-        year = date.today().year
+        year = datetime.date.today().year
     if not month:
-        month = date.today().month
+        month = datetime.date.today().month
 
     year = int(year)
     month = int(month)
@@ -592,8 +592,8 @@ def personal_report(request, user=None, year=None, month=None):
         'next_date': next_date,
         'weekly_totals': weekly_totals,
         'payperiod_totals': payperiod_totals,
-        'today_year': date.today().year,
-        'today_month': date.today().month,
+        'today_year': datetime.date.today().year,
+        'today_month': datetime.date.today().month,
         'is_a_punchclock': is_a_punchclock,
         'punchclock_message': choice(punchclock_message),
     }
