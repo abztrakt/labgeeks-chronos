@@ -3,7 +3,6 @@
 from django.test import TestCase
 from django.test.client import RequestFactory
 from django.test import Client
-from datetime import datetime
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from labgeeks_chronos import models as c_models

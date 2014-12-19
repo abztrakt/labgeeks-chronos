@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.core.mail import send_mail
 import datetime
-from datetime import timedelta
 import socket
 from optparse import make_option
 
@@ -16,9 +15,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if len(args) == 2:
             num = int(options['num'])
-            end_date = datetime.datetime.now() - timedelta(days=1)
+            end_date = datetime.datetime.now() - datetime.timedelta(days=1)
             end_date_display = end_date.strftime("%Y-%m-%d")
-            start_date = end_date - timedelta(days=num - 1)
+            start_date = end_date - datetime.timedelta(days=num - 1)
             start_date_display = start_date.strftime("%Y-%m-%d")
             email = args[0]
             service = args[1]
