@@ -496,11 +496,11 @@ class LateTableCase(TestCase):
         expected_conflicts = [{'name': u'User 1',
                                'netid': 'user1',
                                'comm_in': u'IN: ',
-                               'comm_out': u'OUT '}]
+                               'comm_out': u'OUT: '}]
         expected_no_shows = [{'In': '15:00:00',
                               'Out': '18:00:00',
                               'Shift': 2,
-                              'name': 'User 1',
+                              'name': u'User 1',
                               'netid': 'user1'}]
         expected_missing_ids = []
 
@@ -515,7 +515,7 @@ class LateTableCase(TestCase):
                                                shiftnote='IN: \n\nOUT: ',
                                                in_clock=self.pclock,
                                                out_clock=self.pclock)
-        shift2 = c_models.Shift.objects.create(person=user1,
+        shift2 = c_models.Shift.objects.create(person=self.user1,
                                                intime=datetime.datetime(1927, 12, 22, 19, 30, 25),
                                                outtime=datetime.datetime(1927, 12, 22, 22, 30, 45),
                                                shiftnote='IN: \n\nOUT: ',
@@ -532,13 +532,13 @@ class LateTableCase(TestCase):
                                'comm_in': u'IN: ',
                                'comm_out': u'OUT: '},
                               {'name': u'User 1',
-                               'netid': 'user1'
+                               'netid': 'user1',
                                'comm_in': u'IN: ',
                                'comm_out': u'OUT: '}]
         expected_no_shows = [{'In': '13:30:00',
                               'Out': '15:30:00',
                               'Shift': 2,
-                              'name': 'User 1',
+                              'name': u'User 1',
                               'netid': 'user1'}]
         expected_missing_ids = []
 
