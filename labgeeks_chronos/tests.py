@@ -600,12 +600,7 @@ class PunchclockTests(TestCase):
     def test_clock_in_everything_correct(self):
         """
         Tests time() function for clocking in with everything correct -- Method = POST
-        """             
-        # Get the Shift object that was created
-        # -- for 1st iteration: have a random string in the created Shift object's shift note,
-        #    and assert if the shift note matches to determine if the Shift object is the one we want
-        # -- for 2nd iteration: use mock library to patch the function that sets the in time of the shift object
-
+        """
         # Get the user created in setUp()
         user2 = User.objects.get(username='user2')
 
@@ -618,7 +613,6 @@ class PunchclockTests(TestCase):
         client.login(username='user2', password='punchclock')
        
         # Patch the output of datetime.now() so that we can assert the redirect url
-
         target = datetime.datetime(1927, 10, 15, 3, 45)
         with mock_datetime_now(target, datetime):
             response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
@@ -651,8 +645,6 @@ class PunchclockTests(TestCase):
         shift_out_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
 
         # Patch the output of datetime.now() so that we can assert the redirect url
-        import datetime
-
         # clock in
         target = datetime.datetime(1927, 10, 15, 3, 45)
         with mock_datetime_now(target, datetime):
@@ -675,6 +667,126 @@ class PunchclockTests(TestCase):
         location = 'Campus'
         person = 'user2'
         self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
+
+    def test_fail_without_message_in_request(self):
+        """
+        Test fail() function; See if it behaves properly without giving message
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        reason = 'I am sick'
+        log_msg = 'punchpara'
+        
+        # Because I do not provide message, I expect an error being thrown
+        error_occured = False
+        try:
+            response = client.get("/chronos/time/fail/?reason=%s&log_msg=%s" % (reason, log_msg),  REMOTE_ADDR='0.0.0.0')
+        except UnboundLocalError:
+            # error is UnboundLocalError: local variable 'message' referenced before assignment
+            error_occured = True
+
+        self.assertTrue(error_occured)
+        
+    def test_fail_with_message_in_request(self):
+        """
+        Test fail() function; See if it behaves properly giving message
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        message = 'You should go and see the doctor'
+        reason = 'I am sick'
+        log_msg = 'punchparadox'
+        
+        # I do not expect an error being thrown
+        error_occured = False
+        try:
+            response = client.get("/chronos/time/fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg),  REMOTE_ADDR='0.0.0.0')
+            self.assertEqual(response.status_code, 200)
+
+            # I expect to see these in the response.content
+            expect_html_title = "<h1>FAIL</h1>\n"
+            expect_html_message = "<p>You should go and see the doctor</p>\n"
+            expect_html_reason = "<p>I am sick</p>\n"
+            expect_html_log_msg = "href=\"/punchparadox/\""
+
+            content = response.content
+            contains = (content.find(expect_html_title) != -1) & (content.find(expect_html_message) != -1)  & (content.find(expect_html_reason) != -1) & (content.find(expect_html_log_msg) != -1)
+
+            self.assertTrue(contains)
+            
+        except UnboundLocalError:
+            # error is UnboundLocalError: local variable 'message' referenced before assignment
+            error_occured = True
+
+        self.assertFalse(error_occured)
+
+    def test_success_clock_in_everything_correct(self):
+        """
+        Test success() function for clock in everything correct
+        """
+        user2 = User.objects.get(username='user2')
+                
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person),  REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+    def test_success_clock_out_everything_correct(self):
+        """
+        Test success() function for clock out everything correct
+        """
+        user2 = User.objects.get(username='user2')
+                
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'OUT'
+        at_time = '1927-10-15,%203:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person),  REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:red\">OUT</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
 
     def breakDown(self):
         user2.delete()
