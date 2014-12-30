@@ -9,6 +9,7 @@ from labgeeks_chronos import models as c_models
 from labgeeks_chronos import views as c_views
 from labgeeks_chronos import utils as c_utils
 from labgeeks_chronos import forms as c_forms
+from labgeeks_people import models as p_models
 from mock import patch
 import unittest
 import string, random
@@ -631,6 +632,34 @@ class PunchclockTests(TestCase):
         person = 'user2'
         self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
 
+    
+    def test_clock_in_no_punchclock_at_ip(self):
+        """
+        Tests time() function when a user has improper ip address for punchclock 
+        """
+        # Get the user created in setUp()
+        user2 = User.objects.get(username='user2')
+
+        # Make up a random string with 10 characters
+        length = 10 
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+       
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        # Using 1.1.1.1 as REMOTE_ADDR instead of punchclock's 0.0.0.0
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='1.1.1.1')
+
+        message = "You%20are%20a%20very%20bad%20monkey!"
+        reason = "This%20computer%20isn't%20one%20of%20the%20punchclocks,%20silly..."
+        log_msg = "Your%%20IP%%20Address,%%20%s,%%20has%%20been%%20logged%%20and%%20will%%20be%%20reported.%%20(Just%%20kidding.%%20But%%20seriously,%%20you%%20can't%%20sign%%20in%%20or%%20out%%20from%%20here.)" % "1.1.1.1"
+        self.assertRedirects(response, "/chronos/time/fail/?message=%s&reason=%s&log_msg=%s" % (message, reason, log_msg))
+
+
     def test_clock_out_everything_correct(self):
 
         user2 = User.objects.get(username='user2')
@@ -667,6 +696,7 @@ class PunchclockTests(TestCase):
         location = 'Campus'
         person = 'user2'
         self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
+
 
     def test_clock_out_when_user_signed_in_but_no_open_shift(self):
         """
@@ -707,12 +737,94 @@ class PunchclockTests(TestCase):
         message = "Whoa.%20Something%20wacky%20is%20up."
         reason = "You%%20appear%%20to%%20be%%20signed%%20in%%20at%%20%s,%%20but%%20don't%%20have%%20an%%20open%%20entry%%20in%%20my%%20database.%%20This%%20is%%20kind%%20of%%20a%%20metaphysical%%20crisis%%20for%%20me,%%20I'm%%20no%%20longer%%20sure%%20what%%20it%%20all%%20means." % location
         log_msg = "punchparadox"
-        self.assertRedirects(response, "/chronos/time/fail/?reason={0}&message={1}&log_msg={2}".format(reason, message, log_msg))
+        self.assertRedirects(response, "/chronos/time/fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg))
+
+
+    def test_clock_in_and_out_not_post_but_get_shift_form(self):
+        """
+        Test time() function; Instead of sending POST request, test the result of GET request, which is to get the shiftform
+        """
+        user2 = User.objects.get(username='user2')
+        
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
+
+        # We don't need to actually clock in to test the clock out form
+        # Put the user in Location.active_users
+        location = c_models.Location.objects.filter(name='Campus')
+        location = location[0]
+        location.active_users.add(user2)
+        
+        # Then get the clock out shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+        expect_clock_out_button = '<input type="submit" id="submit_button" value="Clock OUT!" />'
+        content = response.content
+        contains = content.find(expect_clock_out_button) != -1
+        self.assertTrue(contains)
+
+
+    def test_clock_in_get_shift_form_and_user_has_profile_no_call_me_by(self):
+        """
+        Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile does not have call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2)
+        
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
+
+
+    def test_clock_in_get_shift_form_and_user_has_profile_with_call_me_by(self):
+        """
+        Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile has call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+        
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
 
         
-    def test_fail_without_message_in_request(self):
+    def test_fail_without_message_reason_and_log_msg_in_request(self):
         """
-        Test fail() function; See if it behaves properly without giving message
+        Test fail() function; See if it behaves properly without giving message, reason, or log_msg
         """
         user2 = User.objects.get(username='user2')
 
@@ -720,19 +832,17 @@ class PunchclockTests(TestCase):
         client = Client()
         client.login(username='user2', password='punchclock')
         
-        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
-        reason = 'I am sick'
-        log_msg = 'punchpara'
-        
-        # Because I do not provide message, I expect an error being thrown
+        # GET into /chronos/time/fail, where fail() gets called;        
+        # Because I do not provide message, reason and log_msg, I expect an error being thrown
         error_occured = False
         try:
-            response = client.get("/chronos/time/fail/?reason=%s&log_msg=%s" % (reason, log_msg),  REMOTE_ADDR='0.0.0.0')
+            response = client.get("/chronos/time/fail/?",  REMOTE_ADDR='0.0.0.0')
         except UnboundLocalError:
             # error is UnboundLocalError: local variable 'message' referenced before assignment
             error_occured = True
 
         self.assertTrue(error_occured)
+
         
     def test_fail_with_message_in_request(self):
         """
@@ -829,6 +939,75 @@ class PunchclockTests(TestCase):
         contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
 
         self.assertTrue(contains)
+
+    
+    def test_success_clock_in_correct_and_user_has_profile_no_call_me_by(self):
+        """
+        Test success() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile does not have call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2)
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person),  REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+
+    def test_success_clock_in_correct_and_user_has_profile_with_call_me_by(self):
+        """
+        Test success() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile has call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+        
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM' # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person),  REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
 
     def breakDown(self):
         user2.delete()
