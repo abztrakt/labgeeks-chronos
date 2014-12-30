@@ -668,6 +668,48 @@ class PunchclockTests(TestCase):
         person = 'user2'
         self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
 
+    def test_clock_out_when_user_signed_in_but_no_open_shift(self):
+        """
+        Test time() function, when clocking out, an exception is thrown because the user is clocked in but there is no open shift for him
+        """
+        # First clock in, then delete the open shift created when clocking in, then try to clock out.
+        
+        # Get the user created in setUp()
+        user2 = User.objects.get(username='user2')
+
+        # Make up a random string with 10 characters
+        length = 10 
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+        shift_out_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+       
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        # clock in
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # Delete the shift object        
+        oldshift = c_models.Shift.objects.filter(person=user2, outtime=None)
+        oldshift = oldshift[0]
+        oldshift.delete()
+
+        # clock out
+        target = datetime.datetime(1927, 10, 15, 5, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/',  {'shiftnote' : shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # Asserts the redirect url
+        location = 'Campus'
+        message = "Whoa.%20Something%20wacky%20is%20up."
+        reason = "You%%20appear%%20to%%20be%%20signed%%20in%%20at%%20%s,%%20but%%20don't%%20have%%20an%%20open%%20entry%%20in%%20my%%20database.%%20This%%20is%%20kind%%20of%%20a%%20metaphysical%%20crisis%%20for%%20me,%%20I'm%%20no%%20longer%%20sure%%20what%%20it%%20all%%20means." % location
+        log_msg = "punchparadox"
+        self.assertRedirects(response, "/chronos/time/fail/?reason={0}&message={1}&log_msg={2}".format(reason, message, log_msg))
+
+        
     def test_fail_without_message_in_request(self):
         """
         Test fail() function; See if it behaves properly without giving message
