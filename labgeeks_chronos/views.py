@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.contrib.auth.decorators import login_required
 from django.core.context_processors import csrf
 from django.shortcuts import render_to_response, get_object_or_404, \
@@ -10,7 +9,6 @@ from random import choice
 from labgeeks_chronos.utils import *
 from labgeeks.utils import ReportCalendar, TimesheetCalendar
 from django.contrib.auth.models import User
-from datetime import date
 from django.utils.safestring import mark_safe
 from labgeeks_people.models import UserProfile
 from django.http import HttpResponse, HttpResponseBadRequest
@@ -21,7 +19,7 @@ import collections
 from collections import defaultdict
 import calendar
 from django.template import RequestContext
-
+import datetime
 
 def list_options(request):
     """ Lists the options that users can get to when using chronos.
@@ -93,9 +91,8 @@ def late_table(request):
     end_date = request.GET.get('end_date', '')
     service = request.GET.get('service', '')
 
-    import datetime
     start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d') + datetime.timedelta(days=1)
     shift_data = {}
     students_msg = []
     students_missing_netids = set()
@@ -104,21 +101,21 @@ def late_table(request):
     for each_day in range(int((end_date - start_date).days)):
         start = start_date
         num = each_day + 1
-        end = start_date + timedelta(days=num)
+        end = start_date + datetime.timedelta(days=num)
         shifts_for_day = Shift.objects.filter(intime__gte=start.strftime("%Y-%m-%d %X"), outtime__lte=end.strftime("%Y-%m-%d 04:00:00"))
-        curr_date = start_date + timedelta(days=each_day)
+        curr_date = start_date + datetime.timedelta(days=each_day)
         dates.append(curr_date)
         shift_data[curr_date] = shifts_for_day
 
     for date, shifts in shift_data.items():
-        date = date.strftime("%Y-%m-%d")
+        date = datetime.date.strftime("%Y-%m-%d")
         response = interpret_results(date, service)
         students_msg.append(response[0])
         for netid in response[1]:
             students_missing_netids.add(netid)
 
     start_date_display = start_date.strftime("%b. %d, %Y")
-    end_date_display = end_date - timedelta(days=1)
+    end_date_display = end_date - datetime.timedelta(days=1)
     end_date_display = end_date_display.strftime("%b. %d, %Y")
 
     return render_to_response('late_table.html', locals(), context_instance=RequestContext(request))
@@ -282,7 +279,7 @@ def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
     if week:
         # Filter the shifts by the given week of the month (i.e. week=1 means
         # grab shifts in 1st week of month)
-        first_week = date(int(year), int(month), 1).isocalendar()[1]
+        first_week = datetime.date(int(year), int(month), 1).isocalendar()[1]
 
         # TODO: fix this hack to get around isocaledar's first week of the year
         # wierdness. See #98
@@ -327,7 +324,7 @@ def calc_shift_stats(shifts, year, month):
     """
     payperiod_totals = {'first': 0, 'second': 0}
     weekly = {}
-    first_week = date(year, month, 1).isocalendar()[1]
+    first_week = datetime.date(year, month, 1).isocalendar()[1]
 
     # TODO: fix this hack around isocalendars calculating first week of the
     # year, see #98
@@ -377,16 +374,16 @@ def prev_and_next_dates(year, month):
     # Figure out the prev and next months
     if month == 1:
         # Its January
-        prev_date = date(year - 1, 12, 1)
-        next_date = date(year, 2, 1)
+        prev_date = datetime.date(year - 1, 12, 1)
+        next_date = datetime.date(year, 2, 1)
     elif month == 12:
         # Its December
-        prev_date = date(year, 11, 1)
-        next_date = date(year + 1, 1, 1)
+        prev_date = datetime.date(year, 11, 1)
+        next_date = datetime.date(year + 1, 1, 1)
     else:
         # Its a regular month
-        prev_date = date(year, month - 1, 1)
-        next_date = date(year, month + 1, 1)
+        prev_date = datetime.date(year, month - 1, 1)
+        next_date = datetime.date(year, month + 1, 1)
 
     result = {'prev_date': prev_date, 'next_date': next_date}
     return result
@@ -422,13 +419,13 @@ def specific_report(request, user, year, month, day=None, week=None, payperiod=N
 
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         if day:
-            description = "Viewing shifts for %s." % (date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
+            description = "Viewing shifts for %s." % (datetime.date(int(year), int(month), int(day)).strftime("%B %d, %Y"))
             all_shifts = get_shifts(year, month, day, user, week, payperiod)
         elif week:
-            description = "Viewing shifts in week %d of %s." % (int(week), date(int(year), int(month), 1).strftime("%B, %Y"))
+            description = "Viewing shifts in week %d of %s." % (int(week), datetime.date(int(year), int(month), 1).strftime("%B, %Y"))
         else:
             # This should be a payperiod view
-            description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), date(int(year), int(month), 1).strftime("%B, %Y"))
+            description = "Viewing shifts in payperiod %d of %s." % (int(payperiod), datetime.date(int(year), int(month), 1).strftime("%B, %Y"))
             params['description'] = description
     except:
         template = loader.get_template('400.html')
@@ -499,9 +496,9 @@ def report(request, user=None, year=None, month=None):
 
     # Grab shifts
     if not year:
-        year = date.today().year
+        year = datetime.date.today().year
     if not month:
-        month = date.today().month
+        month = datetime.date.today().month
     year = int(year)
     month = int(month)
     shifts = get_shifts(year, month, None, user)
@@ -524,8 +521,8 @@ def report(request, user=None, year=None, month=None):
         'prev_date': prev_date,
         'next_date': next_date,
         'weeks': weeks,
-        'today_year': date.today().year,
-        'today_month': date.today().month,
+        'today_year': datetime.date.today().year,
+        'today_month': datetime.date.today().month,
     }
 
     return render_to_response('report.html', args, context_instance=RequestContext(request))
@@ -546,9 +543,9 @@ def personal_report(request, user=None, year=None, month=None):
     # If the year and month are not given, assume it is the current year &
     # month.
     if not year:
-        year = date.today().year
+        year = datetime.date.today().year
     if not month:
-        month = date.today().month
+        month = datetime.date.today().month
 
     year = int(year)
     month = int(month)
@@ -595,8 +592,8 @@ def personal_report(request, user=None, year=None, month=None):
         'next_date': next_date,
         'weekly_totals': weekly_totals,
         'payperiod_totals': payperiod_totals,
-        'today_year': date.today().year,
-        'today_month': date.today().month,
+        'today_year': datetime.date.today().year,
+        'today_month': datetime.date.today().month,
         'is_a_punchclock': is_a_punchclock,
         'punchclock_message': choice(punchclock_message),
     }
@@ -650,7 +647,7 @@ def time(request):
                     reason = "You appear to be signed in at %s, but don't have an open entry in my database. This is kind of a metaphysical crisis for me, I'm no longer sure what it all means." % location
                     log_msg = "punchparadox"
                     return HttpResponseRedirect("fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg))
-                oldshift.outtime = datetime.now()
+                oldshift.outtime = datetime.datetime.now()
                 oldshift.shiftnote = "IN: %s\n\nOUT: %s" % (oldshift.shiftnote, form.data['shiftnote'])
                 oldshift.out_clock = punchclock
                 oldshift.save()
@@ -664,7 +661,7 @@ def time(request):
             else:
                 # if shift.person  location.active_staff
                 if this_shift.intime is None:
-                    this_shift.intime = datetime.now()
+                    this_shift.intime = datetime.datetime.now()
                 this_shift.in_clock = punchclock
                 # On success, save the shift
                 this_shift.save()

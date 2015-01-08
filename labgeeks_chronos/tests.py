@@ -1,13 +1,49 @@
 """ Begin testing for Chronos, import proper libraries and models.
 """
 from django.test import TestCase
-from datetime import datetime
+from django.test.client import RequestFactory
+from django.test import Client
 from django.contrib.auth import login, logout
 from django.contrib.auth.models import User
 from labgeeks_chronos import models as c_models
 from labgeeks_chronos import views as c_views
 from labgeeks_chronos import utils as c_utils
+from labgeeks_chronos import forms as c_forms
+from labgeeks_people import models as p_models
+from mock import patch
 import unittest
+import string
+import random
+import datetime
+
+
+# Mock the datetime class
+
+real_datetime_class = datetime.datetime
+
+
+def mock_datetime_now(target, dt):
+
+    import mock
+
+    class DatetimeSubclassMeta(type):
+        @classmethod
+        def __instancecheck__(mcs, obj):
+            return isinstance(obj, real_datetime_class)
+
+    class BaseMockedDatetime(real_datetime_class):
+        @classmethod
+        def now(cls, tz=None):
+            return target.replace(tzinfo=tz)
+
+        @classmethod
+        def utcnow(cls):
+            return target
+
+    # Python2 & Python3 compatible metaclass
+    MockedDatetime = DatetimeSubclassMeta('datetime', (BaseMockedDatetime,), {})
+
+    return mock.patch.object(dt, 'datetime', MockedDatetime)
 
 
 class StartTestCase(TestCase):
@@ -100,7 +136,7 @@ class ShiftsTestCase(StartTestCase):
     def setUp(self):
         super(ShiftsTestCase, self).setUp()
         person = self.ryu
-        intime = datetime(2011, 1, 1, 8, 0)
+        intime = datetime.datetime(2011, 1, 1, 8, 0)
         shift = c_models.Shift(person=person, intime=intime)
         shift.save()
 
@@ -125,30 +161,26 @@ class LateTableCase(TestCase):
         """
         Creates a user, campus, and punchclock for tests to be run with.
         """
-        user1 = User.objects.create_user('user1', 'user1@uw.edu', 'coolestuser')
-        user1.first_name = 'User'
-        user1.last_name = '1'
-        user1.is_active = True
-        user1.is_staff = True
-        user1.is_superuser = False
-        user1.save()
-        campus = c_models.Location.objects.create(name='Campus')
-        pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
+        self.user1 = User.objects.create_user('user1', 'user1@uw.edu', 'coolestuser')
+        self.user1.first_name = 'User'
+        self.user1.last_name = '1'
+        self.user1.is_active = True
+        self.user1.is_staff = True
+        self.user1.is_superuser = False
+        self.user1.save()
+        self.campus = c_models.Location.objects.create(name='Campus')
+        self.pclock = c_models.Punchclock.objects.create(name='ode', location=self.campus, ip_address='0.0.0.0')
 
     def test_on_time(self):
         """
         Tests the instance that the student clocks in on time and leaves on time.
         """
-        from mock import patch
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
-                                              intime=datetime(1927, 11, 04, 11, 30, 27),
-                                              outtime=datetime(1927, 11, 04, 14, 45, 37),
+        shift = c_models.Shift.objects.create(person=self.user1,
+                                              intime=datetime.datetime(1927, 11, 04, 11, 30, 27),
+                                              outtime=datetime.datetime(1927, 11, 04, 14, 45, 37),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-11-04'
         service = 'dummy_service'
 
@@ -169,17 +201,12 @@ class LateTableCase(TestCase):
         """
         Tests the instance that the student clocks in slightly early and leaves on time
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 11, 03, 11, 28, 27),
                                               outtime=datetime.datetime(1927, 11, 03, 14, 45, 37),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
@@ -205,17 +232,12 @@ class LateTableCase(TestCase):
         """
         Tests the instance that the student clocks out slightly late and clocks in on time.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 11, 03, 11, 30, 00),
                                               outtime=datetime.datetime(1927, 11, 03, 14, 46, 37),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-11-03'
         service = 'dummy_service'
 
@@ -241,19 +263,14 @@ class LateTableCase(TestCase):
         """
         This test does not currently pass becuas there is a bug in the code. In the process of fixing it. Supposed to test the instance that the student has two shifts in a 24 hour time span but only works one of the shifts.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
 
         # This shift was worked the day before the day being examined--date = '1927-03-11'
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 11, 02, 18, 49, 20),
                                               outtime=datetime.datetime(1927, 11, 02, 22, 21, 25),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
 
         date = '1927-11-03'
         service = 'dummy_service'
@@ -278,17 +295,12 @@ class LateTableCase(TestCase):
         """
         Tests the instance when the student is scheduled to work a shift but does not work it.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 02, 11, 11, 30, 27),
                                               outtime=datetime.datetime(1927, 02, 11, 14, 46, 37),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -310,17 +322,12 @@ class LateTableCase(TestCase):
         """
         This test does not currently pass because of a bug in the code that I am working on fixing. Supposed to test when the shifts are more than 23 hours apart from each other but less than 24 hours.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 12, 14, 12, 41),
                                               outtime=datetime.datetime(1927, 03, 12, 19, 02, 06),
                                               shiftnote='IN: \n\nOUT:',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -342,17 +349,12 @@ class LateTableCase(TestCase):
         """
         Tests that time is set to 00:00:00 when time  passed in is 24:00:00. This works but creates a bug.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 11, 18, 49, 20),
                                               outtime=datetime.datetime(1927, 03, 11, 23, 59, 06),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
 
         date = '1927-03-11'
         service = 'dummy_service'
@@ -374,17 +376,12 @@ class LateTableCase(TestCase):
         """
         Test the instance when the student clocks in on time and clocks out early.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 06, 23, 18, 00, 00),
                                               outtime=datetime.datetime(1927, 06, 23, 23, 40, 00),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-06-23'
         service = 'dummy_service'
 
@@ -410,17 +407,12 @@ class LateTableCase(TestCase):
         """
         Tests that the message that is passed back to the temaplate is correct.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
                                               outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -447,17 +439,12 @@ class LateTableCase(TestCase):
     def test_missing_netid(self):
         """ Tests the case that a user name returned from the api call that has a user who is not in the database.
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 11, 11, 30, 56),
                                               outtime=datetime.datetime(1927, 03, 11, 14, 46, 03),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -474,17 +461,12 @@ class LateTableCase(TestCase):
     def test_shiftnote(self):
         """ Tests when the user deletes the auto filled 'IN: \n\nOUT: ' and putting their own
         """
-        from mock import patch
-        import datetime
-
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 11, 11, 30, 27),
                                               outtime=datetime.datetime(1927, 03, 11, 14, 46, 37),
                                               shiftnote='I deleted the auto filled stuff and put my own note',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -507,17 +489,13 @@ class LateTableCase(TestCase):
         shift.delete()
 
     def test_overnight_shift(self):
-        from mock import patch
-        import datetime
 
-        user1 = User.objects.get(username='user1')
-        pclock = c_models.Punchclock.objects.get(name='ode')
-        shift = c_models.Shift.objects.create(person=user1,
+        shift = c_models.Shift.objects.create(person=self.user1,
                                               intime=datetime.datetime(1927, 03, 11, 22, 15, 00),
                                               outtime=datetime.datetime(1927, 03, 12, 2, 15, 00),
                                               shiftnote='IN: \n\nOUT: ',
-                                              in_clock=pclock,
-                                              out_clock=pclock)
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
         date = '1927-03-11'
         service = 'dummy_service'
 
@@ -534,13 +512,81 @@ class LateTableCase(TestCase):
         self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
         shift.delete()
 
-    def breakDown(self):
+    def test_no_show_and_conflict(self):
+        """ Tests when the user is scheduled for two shifts in one day but only works one of the shifts.
+        """
+        shift = c_models.Shift.objects.create(person=self.user1,
+                                              intime=datetime.datetime(1927, 12, 19, 9, 30, 35),
+                                              outtime=datetime.datetime(1927, 12, 19, 11, 30, 20),
+                                              shiftnote='IN: \n\nOUT: ',
+                                              in_clock=self.pclock,
+                                              out_clock=self.pclock)
+        date = '1927-12-19'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "11:30:00", "In": "09:30:00", "Shift": 1}, {"Out": "18:00:00", "In": "15:00:00", "Shift": 2}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = [{'name': u'User 1',
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '}]
+        expected_no_shows = [{'In': '15:00:00',
+                              'Out': '18:00:00',
+                              'Shift': 2,
+                              'name': u'User 1',
+                              'netid': 'user1'}]
+        expected_missing_ids = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
+
+    def test_no_show_and_conflicts_2(self):
+        """ Tests when the user if scheduled for 3 shifts in one day but only shows up for two shifts.
+        """
+        shift1 = c_models.Shift.objects.create(person=self.user1,
+                                               intime=datetime.datetime(1927, 12, 22, 8, 30, 35),
+                                               outtime=datetime.datetime(1927, 12, 22, 10, 30, 11),
+                                               shiftnote='IN: \n\nOUT: ',
+                                               in_clock=self.pclock,
+                                               out_clock=self.pclock)
+        shift2 = c_models.Shift.objects.create(person=self.user1,
+                                               intime=datetime.datetime(1927, 12, 22, 19, 30, 25),
+                                               outtime=datetime.datetime(1927, 12, 22, 22, 30, 45),
+                                               shiftnote='IN: \n\nOUT: ',
+                                               in_clock=self.pclock,
+                                               out_clock=self.pclock)
+        date = '1927-12-22'
+        service = 'dummy_service'
+
+        with patch.object(c_utils, 'read_api', return_value={"Shifts": {"user1": [{"Out": "10:30:00", "In": "8:30:00", "Shift": 1}, {"Out": "15:30:00", "In": "13:30:00", "Shift": 2}, {"Out": "22:30:00", "In": "19:30:00", "Shift": 3}]}}):
+            results = c_utils.compare(date, service)
+
+        expected_conflicts = [{'name': u'User 1',
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '},
+                              {'name': u'User 1',
+                               'netid': 'user1',
+                               'comm_in': u'IN: ',
+                               'comm_out': u'OUT: '}]
+        expected_no_shows = [{'In': '13:30:00',
+                              'Out': '15:30:00',
+                              'Shift': 2,
+                              'name': u'User 1',
+                              'netid': 'user1'}]
+        expected_missing_ids = []
+
+        self.assertEqual(results, (expected_no_shows, expected_conflicts, expected_missing_ids))
+        shift1.delete()
+        shift2.delete()
+
+    def tearDown(self):
         """
         destroys all the objects that were created for each test.
         """
-        user1.delete()
-        location.delete()
-        pclock.delete()
+        self.user1.delete()
+        self.campus.delete()
+        self.pclock.delete()
 
 
 class PunchclockTests(TestCase):
@@ -556,7 +602,408 @@ class PunchclockTests(TestCase):
         campus = c_models.Location.objects.create(name='Campus')
         pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
 
-    def tearDown(slef):
+    def test_clock_in_everything_correct(self):
+        """
+        Tests time() function for clocking in with everything correct -- Method = POST
+        """
+        # Get the user created in setUp()
+        user2 = User.objects.get(username='user2')
+
+        # Make up a random string with 10 characters
+        length = 10
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # HTTP 302 due to URL redirection
+        self.assertEqual(response.status_code, 302)
+        # Returning a QuerySet
+        shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
+        # We want the Shift object
+        shift_created = shift_created[0]
+        self.assertEqual(shift_created.shiftnote, shift_in_note_random)
+
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM'
+        # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
+
+    def test_clock_in_no_punchclock_at_ip(self):
+        """
+        Tests time() function when a user has improper ip address for punchclock
+        """
+        # Get the user created in setUp()
+        user2 = User.objects.get(username='user2')
+
+        # Make up a random string with 10 characters
+        length = 10
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        # Using 1.1.1.1 as REMOTE_ADDR instead of punchclock's 0.0.0.0
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_in_note_random}, REMOTE_ADDR='1.1.1.1')
+
+        message = "You%20are%20a%20very%20bad%20monkey!"
+        reason = "This%20computer%20isn't%20one%20of%20the%20punchclocks,%20silly..."
+        log_msg = "Your%%20IP%%20Address,%%20%s,%%20has%%20been%%20logged%%20and%%20will%%20be%%20reported.%%20(Just%%20kidding.%%20But%%20seriously,%%20you%%20can't%%20sign%%20in%%20or%%20out%%20from%%20here.)" % "1.1.1.1"
+        self.assertRedirects(response, "/chronos/time/fail/?message=%s&reason=%s&log_msg=%s" % (message, reason, log_msg))
+
+    def test_clock_out_everything_correct(self):
+
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # Make up a random string with 10 characters
+        length = 10
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+        shift_out_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        # clock in
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # clock out
+        target = datetime.datetime(1927, 10, 15, 5, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # Get the shift obejct again, see if it has the expected note
+        shift_created = c_models.Shift.objects.filter(person=user2)
+        shift_created = shift_created[0]
+        expected_note = "IN: %s\n\nOUT: %s" % (shift_in_note_random, shift_out_note_random)
+        # We want the Shift object
+        self.assertEqual(shift_created.shiftnote, expected_note)
+
+        success = 'OUT'
+        at_time = '1927-10-15,%205:45%20AM'  # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+        self.assertRedirects(response, "chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person))
+
+    def test_clock_out_when_user_signed_in_but_no_open_shift(self):
+        """
+        Test time() function, when clocking out, an exception is thrown because the user is clocked in but there is no open shift for him
+        """
+        # First clock in, then delete the open shift created when clocking in, then try to clock out.
+
+        # Get the user created in setUp()
+        user2 = User.objects.get(username='user2')
+
+        # Make up a random string with 10 characters
+        length = 10
+        shift_in_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+        shift_out_note_random = ''.join(random.choice(string.lowercase) for i in range(length))
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # Patch the output of datetime.now() so that we can assert the redirect url
+        # clock in
+        target = datetime.datetime(1927, 10, 15, 3, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # Delete the shift object
+        oldshift = c_models.Shift.objects.filter(person=user2, outtime=None)
+        oldshift = oldshift[0]
+        oldshift.delete()
+
+        # clock out
+        target = datetime.datetime(1927, 10, 15, 5, 45)
+        with mock_datetime_now(target, datetime):
+            response = client.post('/chronos/time/', {'shiftnote': shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
+
+        # Asserts the redirect url
+        location = 'Campus'
+        message = "Whoa.%20Something%20wacky%20is%20up."
+        reason = "You%%20appear%%20to%%20be%%20signed%%20in%%20at%%20%s,%%20but%%20don't%%20have%%20an%%20open%%20entry%%20in%%20my%%20database.%%20This%%20is%%20kind%%20of%%20a%%20metaphysical%%20crisis%%20for%%20me,%%20I'm%%20no%%20longer%%20sure%%20what%%20it%%20all%%20means." % location
+        log_msg = "punchparadox"
+        self.assertRedirects(response, "/chronos/time/fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg))
+
+    def test_clock_in_and_out_not_post_but_get_shift_form(self):
+        """
+        Test time() function; Instead of sending POST request, test the result of GET request, which is to get the shiftform
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
+
+        # We don't need to actually clock in to test the clock out form
+        # Put the user in Location.active_users
+        location = c_models.Location.objects.filter(name='Campus')
+        location = location[0]
+        location.active_users.add(user2)
+
+        # Then get the clock out shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+        expect_clock_out_button = '<input type="submit" id="submit_button" value="Clock OUT!" />'
+        content = response.content
+        contains = content.find(expect_clock_out_button) != -1
+        self.assertTrue(contains)
+
+    def test_clock_in_get_shift_form_and_user_has_profile_no_call_me_by(self):
+        """
+        Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile does not have call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2)
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
+
+    def test_clock_in_get_shift_form_and_user_has_profile_with_call_me_by(self):
+        """
+        Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile has call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # get the clock in shift form:
+        response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        expect_clock_in_button = '<input type="submit" id="submit_button" value="Clock IN!" />'
+        content = response.content
+        contains = content.find(expect_clock_in_button) != -1
+        self.assertTrue(contains)
+
+    def test_fail_without_message_reason_and_log_msg_in_request(self):
+        """
+        Test fail() function; See if it behaves properly without giving message, reason, or log_msg
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called;
+        # Because I do not provide message, reason and log_msg, I expect an error being thrown
+        error_occured = False
+        try:
+            response = client.get("/chronos/time/fail/?", REMOTE_ADDR='0.0.0.0')
+        except UnboundLocalError:
+            # error is UnboundLocalError: local variable 'message' referenced before assignment
+            error_occured = True
+
+        self.assertTrue(error_occured)
+
+    def test_fail_with_message_in_request(self):
+        """
+        Test fail() function; See if it behaves properly giving message
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        message = 'You should go and see the doctor'
+        reason = 'I am sick'
+        log_msg = 'punchparadox'
+
+        # I do not expect an error being thrown
+        error_occured = False
+        try:
+            response = client.get("/chronos/time/fail/?reason=%s&message=%s&log_msg=%s" % (reason, message, log_msg), REMOTE_ADDR='0.0.0.0')
+            self.assertEqual(response.status_code, 200)
+
+            # I expect to see these in the response.content
+            expect_html_title = "<h1>FAIL</h1>\n"
+            expect_html_message = "<p>You should go and see the doctor</p>\n"
+            expect_html_reason = "<p>I am sick</p>\n"
+            expect_html_log_msg = "href=\"/punchparadox/\""
+
+            content = response.content
+            contains = (content.find(expect_html_title) != -1) & (content.find(expect_html_message) != -1) & (content.find(expect_html_reason) != -1) & (content.find(expect_html_log_msg) != -1)
+
+            self.assertTrue(contains)
+
+        except UnboundLocalError:
+            # error is UnboundLocalError: local variable 'message' referenced before assignment
+            error_occured = True
+
+        self.assertFalse(error_occured)
+
+    def test_success_clock_in_everything_correct(self):
+        """
+        Test success() function for clock in everything correct
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM'  # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person), REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+    def test_success_clock_out_everything_correct(self):
+        """
+        Test success() function for clock out everything correct
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'OUT'
+        at_time = '1927-10-15,%203:45%20AM'  # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person), REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:red\">OUT</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+    def test_success_clock_in_correct_and_user_has_profile_no_call_me_by(self):
+        """
+        Test success() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile does not have call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2)
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM'  # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person), REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+    def test_success_clock_in_correct_and_user_has_profile_with_call_me_by(self):
+        """
+        Test success() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
+        In this case, the UserProfile has call_me_by attribute
+        """
+        user2 = User.objects.get(username='user2')
+
+        # Add this user to user profile
+        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+
+        # Use test client. First login
+        client = Client()
+        client.login(username='user2', password='punchclock')
+
+        # GET into /chronos/time/fail, where fail() gets called; Provide 'reason', 'log_msg', but no 'message'
+        success = 'IN'
+        at_time = '1927-10-15,%203:45%20AM'  # %20 represents a space
+        location = 'Campus'
+        person = 'user2'
+
+        response = client.get("/chronos/time/success/?success=%s&at_time=%s&location=%s&user=%s" % (success, at_time, location, person), REMOTE_ADDR='0.0.0.0')
+        self.assertEqual(response.status_code, 200)
+
+        # I expect to see these in the response.content
+        # user2 is appearing as user2@uw.edu --> it will be there as long as you did client.login
+        expect_html_at_time = "<h3>The date and time recorded: 1927-10-15, 3:45 AM.</h3>\n"
+        expect_html_success_location = "<span style=\"color:green\">IN</span>: Campus."
+
+        content = response.content
+        contains = (content.find(expect_html_at_time) != -1) & (content.find(expect_html_success_location) != -1)
+
+        self.assertTrue(contains)
+
+    def tearDown(self):
         user2.delete()
         location.delete()
         pclock.delete()
