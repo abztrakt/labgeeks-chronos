@@ -556,7 +556,7 @@ class PunchclockTests(TestCase):
         campus = c_models.Location.objects.create(name='Campus')
         pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
 
-    def breakDown(slef):
+    def tearDown(slef):
         user2.delete()
         location.delete()
         pclock.delete()
