@@ -592,22 +592,20 @@ class LateTableCase(TestCase):
 class PunchclockTests(TestCase):
 
     def setUp(self):
-        user2 = User.objects.create_user('user2', 'user2@uw.edu', 'punchclock')
-        user2.first_name = 'User'
-        user2.last_name = '2'
-        user2.is_active = True
-        user2.is_staff = True
-        user2.is_superuser = False
-        user2.save()
-        campus = c_models.Location.objects.create(name='Campus')
-        pclock = c_models.Punchclock.objects.create(name='ode', location=campus, ip_address='0.0.0.0')
+        self.user2 = User.objects.create_user('user2', 'user2@uw.edu', 'punchclock')
+        self.user2.first_name = 'User'
+        self.user2.last_name = '2'
+        self.user2.is_active = True
+        self.user2.is_staff = True
+        self.user2.is_superuser = False
+        self.user2.save()
+        self.location = c_models.Location.objects.create(name='Campus')
+        self.pclock = c_models.Punchclock.objects.create(name='ode', location=self.location, ip_address='0.0.0.0')
 
     def test_clock_in_everything_correct(self):
         """
         Tests time() function for clocking in with everything correct -- Method = POST
         """
-        # Get the user created in setUp()
-        user2 = User.objects.get(username='user2')
 
         # Make up a random string with 10 characters
         length = 10
@@ -625,7 +623,7 @@ class PunchclockTests(TestCase):
         # HTTP 302 due to URL redirection
         self.assertEqual(response.status_code, 302)
         # Returning a QuerySet
-        shift_created = c_models.Shift.objects.filter(person=user2, outtime=None)
+        shift_created = c_models.Shift.objects.filter(person=self.user2, outtime=None)
         # We want the Shift object
         shift_created = shift_created[0]
         self.assertEqual(shift_created.shiftnote, shift_in_note_random)
@@ -641,8 +639,6 @@ class PunchclockTests(TestCase):
         """
         Tests time() function when a user has improper ip address for punchclock
         """
-        # Get the user created in setUp()
-        user2 = User.objects.get(username='user2')
 
         # Make up a random string with 10 characters
         length = 10
@@ -665,7 +661,6 @@ class PunchclockTests(TestCase):
 
     def test_clock_out_everything_correct(self):
 
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -688,7 +683,7 @@ class PunchclockTests(TestCase):
             response = client.post('/chronos/time/', {'shiftnote': shift_out_note_random}, REMOTE_ADDR='0.0.0.0')
 
         # Get the shift obejct again, see if it has the expected note
-        shift_created = c_models.Shift.objects.filter(person=user2)
+        shift_created = c_models.Shift.objects.filter(person=self.user2)
         shift_created = shift_created[0]
         expected_note = "IN: %s\n\nOUT: %s" % (shift_in_note_random, shift_out_note_random)
         # We want the Shift object
@@ -704,10 +699,7 @@ class PunchclockTests(TestCase):
         """
         Test time() function, when clocking out, an exception is thrown because the user is clocked in but there is no open shift for him
         """
-        # First clock in, then delete the open shift created when clocking in, then try to clock out.
-
-        # Get the user created in setUp()
-        user2 = User.objects.get(username='user2')
+        # First clock in, then delete the open shift created when clocking in, then try to clock out
 
         # Make up a random string with 10 characters
         length = 10
@@ -725,7 +717,7 @@ class PunchclockTests(TestCase):
             response = client.post('/chronos/time/', {'shiftnote': shift_in_note_random}, REMOTE_ADDR='0.0.0.0')
 
         # Delete the shift object
-        oldshift = c_models.Shift.objects.filter(person=user2, outtime=None)
+        oldshift = c_models.Shift.objects.filter(person=self.user2, outtime=None)
         oldshift = oldshift[0]
         oldshift.delete()
 
@@ -745,7 +737,6 @@ class PunchclockTests(TestCase):
         """
         Test time() function; Instead of sending POST request, test the result of GET request, which is to get the shiftform
         """
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -764,7 +755,7 @@ class PunchclockTests(TestCase):
         # Put the user in Location.active_users
         location = c_models.Location.objects.filter(name='Campus')
         location = location[0]
-        location.active_users.add(user2)
+        location.active_users.add(self.user2)
 
         # Then get the clock out shift form:
         response = client.get('/chronos/time/', REMOTE_ADDR='0.0.0.0')
@@ -779,10 +770,9 @@ class PunchclockTests(TestCase):
         Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
         In this case, the UserProfile does not have call_me_by attribute
         """
-        user2 = User.objects.get(username='user2')
 
         # Add this user to user profile
-        p_models.UserProfile.objects.create(user=user2)
+        p_models.UserProfile.objects.create(user=self.user2)
 
         # Use test client. First login
         client = Client()
@@ -802,10 +792,9 @@ class PunchclockTests(TestCase):
         Test time() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
         In this case, the UserProfile has call_me_by attribute
         """
-        user2 = User.objects.get(username='user2')
 
         # Add this user to user profile
-        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+        p_models.UserProfile.objects.create(user=self.user2, call_me_by='user2')
 
         # Use test client. First login
         client = Client()
@@ -824,7 +813,6 @@ class PunchclockTests(TestCase):
         """
         Test fail() function; See if it behaves properly without giving message, reason, or log_msg
         """
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -845,7 +833,6 @@ class PunchclockTests(TestCase):
         """
         Test fail() function; See if it behaves properly giving message
         """
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -883,7 +870,6 @@ class PunchclockTests(TestCase):
         """
         Test success() function for clock in everything correct
         """
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -912,7 +898,6 @@ class PunchclockTests(TestCase):
         """
         Test success() function for clock out everything correct
         """
-        user2 = User.objects.get(username='user2')
 
         # Use test client. First login
         client = Client()
@@ -942,10 +927,9 @@ class PunchclockTests(TestCase):
         Test success() function; test what happens if user has a UserProfile object, so that user will be obtained from UserProfile directly
         In this case, the UserProfile does not have call_me_by attribute
         """
-        user2 = User.objects.get(username='user2')
 
         # Add this user to user profile
-        p_models.UserProfile.objects.create(user=user2)
+        p_models.UserProfile.objects.create(user=self.user2)
 
         # Use test client. First login
         client = Client()
@@ -978,7 +962,7 @@ class PunchclockTests(TestCase):
         user2 = User.objects.get(username='user2')
 
         # Add this user to user profile
-        p_models.UserProfile.objects.create(user=user2, call_me_by='user2')
+        p_models.UserProfile.objects.create(user=self.user2, call_me_by='user2')
 
         # Use test client. First login
         client = Client()
@@ -1004,6 +988,6 @@ class PunchclockTests(TestCase):
         self.assertTrue(contains)
 
     def tearDown(self):
-        user2.delete()
-        location.delete()
-        pclock.delete()
+        self.user2.delete()
+        self.location.delete()
+        self.pclock.delete()
