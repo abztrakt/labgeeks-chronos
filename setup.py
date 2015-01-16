@@ -13,6 +13,6 @@ setup(
         'requests',
         'setuptools',
         'labgeeks-people',
-        'South==0.7.3',
+        'South',
     ],
 )
