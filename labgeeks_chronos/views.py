@@ -41,7 +41,7 @@ def monthly_list_shifts(request, user, year, month):
     params['user'] = user
     shifts = Shift.objects.filter(intime__year=int(year), intime__month=int(month), person=user)
     params['shifts'] = shifts
-    return render_to_response('monthly_list_shifts.html', params)
+    return render_to_response('monthly_list_shifts.html', params, context_instance=RequestContext(request))
 
 
 def csv_daily_data(request, year, month, day):
