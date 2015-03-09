@@ -620,6 +620,28 @@ def time(request):
     current_ip = request.META['REMOTE_ADDR']
 
     try:
+        from labgeeks_hermes.models import Notification
+        now = datetime.now()
+
+        notifications = Notification.objects.all()
+        events = []
+        alerts = []
+        for noti in notifications:
+            if noti.due_date:
+                if now.date() - noti.due_date.date() >= timedelta(days=1):
+                    noti.archived = True
+                elif not noti.due_date - now > timedelta(days=7) and not noti.archived:
+                    events.append(noti)
+            else:
+                if not noti.archived:
+                    alerts.append(noti)
+        events.sort(key=lambda x: x.due_date)
+        params['alerts'] = alerts
+        params['events'] = events
+    except:
+        pass
+
+    try:
         punchclock = Punchclock.objects.filter(ip_address=current_ip)[0]
     except:
         # implement bad monkey page redirect

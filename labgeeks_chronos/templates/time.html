@@ -13,6 +13,45 @@
 {% endif %}
 
 </h2>
+{% if events or alerts %}
+  <div id='notificationwrap' style="margin:auto; width:80%">
+    {% if events %}
+        <div id="events" style="overflow:hidden;">
+        <h3>Events</h3>
+        {% for event in events %}
+            <div class="notification" style="float:left; margin-right: 10px;">
+                <h2>{% if can_Add %}<input type="checkbox" name="pk" value="{{event.pk}}">{% endif %}
+                {{event.due_date.month}}/{{event.due_date.day}} {{event.title}} </h2>
+                {% if event.user%}
+                    <p class="info"> {{event.user}} posted on {{event.date}} </p>
+                {% else %}
+                    <p class="info"> Labgeeks posted on {{event.date}} </p>
+                {% endif %}
+                <p> {{event.content}} </p>
+                <p> Due on {{event.due_date}}</p>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if alerts %}
+        <div id="alerts" style="overflow:hidden;">
+            <h3>Alerts</h3>
+            {% for alert in alerts %}
+                <div class="notification" style="float:left; margin-right: 10px;">
+                    <h2>{% if can_Add %}<input type="checkbox" name="pk" value="{{alert.pk}}">{% endif %}{{alert.title}} </h2>
+                    {% if alert.user%}
+                        <p class="info"> {{alert.user}} posted on {{alert.date}} </p>
+                    {% else %}
+                        <p class="info"> Labgeeks posted on {{alert.date}} </p>
+                    {% endif %}
+                    <p> {{alert.content}} </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+  </div>
+{% endif %}
 
 {% if errors %}
     <p class="highlight">
