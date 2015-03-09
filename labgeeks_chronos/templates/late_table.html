@@ -31,7 +31,7 @@
             <th class="header"><a href="#">Note</a></th>
         </thead>
         <tbody>
-            {% for each_day in students  %}
+            {% for each_day in students_msg  %}
                 {% for student in each_day %}
                 <tr>
                     <td>{{ student.name }} ({{ student.netid }})</td>
@@ -45,5 +45,16 @@
             {% endfor  %}
         </tbody>
     </table>
+    {% if students_missing_netids|length != 0 %}
+        <div id='missing_ids' class='alert alert-danger' role='alert'>
+            <h4>Warning:</h4>
+            <p>These netids were scheduled to work but were not found in the database.</p>
+            <ul>
+            {% for netid in students_missing_netids %}
+               <li>{{ netid }}</li>
+            {% endfor %}
+            </ul>
+         </div>
+     {% endif %}
  {% endblock %}
 
