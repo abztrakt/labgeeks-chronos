@@ -102,7 +102,7 @@ class ShiftsTestCase(StartTestCase):
     def setUp(self):
         super(ShiftsTestCase, self).setUp()
         person = self.ryu
-        intime = datetime(2011, 1, 1, 8, 0)
+        intime = datetime.datetime(2011, 1, 1, 8, 0)
         shift = c_models.Shift(person=person, intime=intime)
         shift.save()
 
