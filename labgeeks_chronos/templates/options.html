@@ -10,7 +10,7 @@
         {% endif %}
         <p>Any hours worked are displayed on the calendar. Click on a day to view shifts in detail</p>
         <br />
-        <a class="btn-custom"  href='{%url Monthly-List-Shifts user year month %}'>Go To List View</a>
+        <a class="btn-custom"  href='{% url 'Monthly-List-Shifts' user year month %}'>Go To List View</a>
     </div>
     <div id="calendar">
         {% include "calendar_key.html" %}
