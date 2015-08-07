@@ -9,7 +9,7 @@ setup(
     author = 'Craig Stimmel',
     packages = ['labgeeks_chronos',],
     install_requires = [
-        'mock',
+        'mock==1.0.1',
         'requests',
         'setuptools',
         'labgeeks-people',
