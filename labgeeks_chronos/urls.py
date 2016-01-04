@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import *
 
 urlpatterns = patterns('labgeeks_chronos.views',
                        (r'^report/?$', 'report'),

@@ -8,7 +8,6 @@ from labgeeks_chronos.forms import LateForm, ShiftForm, DataForm, HourForm
 from labgeeks_chronos.models import Shift, Punchclock
 from random import choice
 from labgeeks_chronos.utils import *
-from labgeeks.utils import ReportCalendar, TimesheetCalendar
 from django.contrib.auth.models import User
 from datetime import date
 from django.utils.safestring import mark_safe
@@ -259,7 +258,6 @@ def get_total_hours(request):
         form = DataForm()
         params['form'] = form
     return render_to_response('total_hours.html', params, context_instance=RequestContext(request))
-
 
 def get_shifts(year, month, day=None, user=None, week=None, payperiod=None):
     """ This method is used to return specific shifts
