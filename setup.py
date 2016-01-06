@@ -9,10 +9,12 @@ setup(
     author = 'Craig Stimmel',
     packages = ['labgeeks_chronos',],
     install_requires = [
+        'django==1.4',
         'mock==1.0.1',
         'requests',
         'setuptools',
         'labgeeks-people',
         'south',
+        'django-compressor==1.1.2',
     ],
 )
