@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% block css %}
+    <link rel="stylesheet" type="text/less" href="/static/css/main.less">
+{% endblock %}
+
 {% block content %}
     <div class="section">
         <h1>Punchclock Report for {{user}}</h1>
