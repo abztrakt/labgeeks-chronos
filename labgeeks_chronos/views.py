@@ -20,6 +20,7 @@ import collections
 from collections import defaultdict
 import calendar
 from django.template import RequestContext
+from django.conf import settings
 
 
 def list_options(request):
@@ -558,17 +559,18 @@ def personal_report(request, user=None, year=None, month=None):
         shifts = None
         calendar = None
 
-    # Only has Clock IN or OUT link if computer is a punchclock
     current_ip = request.META['REMOTE_ADDR']
     punchclock_ips = []
     while len(punchclock_ips) < len(Punchclock.objects.all()):
         punchclock_ips.append(Punchclock.objects.values('ip_address')[len(punchclock_ips)]['ip_address'])
-    if current_ip in punchclock_ips:
-        is_a_punchclock = True
-        punchclock_message = ["Clock IN or OUT"]
-    else:
-        is_a_punchclock = False
-        punchclock_message = ["This machine is not a punch clock.",
+    is_a_punchclock = True
+    punchclock_message = ["Clock IN or OUT"]
+
+    if settings.CHRONOS_IP_CHECK:
+        # Only has Clock IN or OUT link if computer is a punchclock
+        if current_ip not in punchclock_ips:
+            is_a_punchclock = False
+            punchclock_message = ["This machine is not a punch clock.",
                               "I'm sorry %s, I'm afraid I can't let you Clock IN or OUT from this machine." % user.first_name,
                               "You shall not pass (or Clock IN or OUT)!",
                               "The cake is a lie, and this box isn't a punch clock."]
