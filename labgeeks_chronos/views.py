@@ -563,10 +563,12 @@ def personal_report(request, user=None, year=None, month=None):
     punchclock_ips = []
     while len(punchclock_ips) < len(Punchclock.objects.all()):
         punchclock_ips.append(Punchclock.objects.values('ip_address')[len(punchclock_ips)]['ip_address'])
+
     is_a_punchclock = True
     punchclock_message = ["Clock IN or OUT"]
 
-    if settings.CHRONOS_IP_CHECK:
+    # Only checks the IP address if they are specified
+    if len(punchclock_ips) > 0:
         # Only has Clock IN or OUT link if computer is a punchclock
         if current_ip not in punchclock_ips:
             is_a_punchclock = False
